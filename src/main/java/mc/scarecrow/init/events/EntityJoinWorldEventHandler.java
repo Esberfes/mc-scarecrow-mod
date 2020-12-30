@@ -1,6 +1,7 @@
 package mc.scarecrow.init.events;
 
 
+import mc.scarecrow.blocks.ScarecrowTile;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.world.BlockEvent;
@@ -18,8 +19,8 @@ public class EntityJoinWorldEventHandler {
 
     @SubscribeEvent
     public static void onEntityJoinWorld(EntityJoinWorldEvent event) {
-        if(event.getEntity() instanceof PlayerEntity)
-            LOGGER.debug("onEntityJoinWorld: " + event.getEntity().getName().getString());
+        LOGGER.debug("onEntityJoinWorld: " + event.getEntity().getName().getString()
+        + ", type: " + event.getEntity().getType().toString());
     }
 
     @SubscribeEvent

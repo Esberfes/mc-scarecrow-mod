@@ -1,25 +1,38 @@
 package mc.scarecrow.entity;
 
 import com.mojang.authlib.GameProfile;
+import mc.scarecrow.init.RegistryHandler;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntitySize;
 import net.minecraft.entity.EntityType;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.Pose;
+import net.minecraft.entity.passive.horse.AbstractHorseEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.management.PlayerInteractionManager;
-import net.minecraft.stats.Stat;
-import net.minecraft.util.DamageSource;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.world.World;
+import net.minecraft.inventory.IInventory;
+import net.minecraft.inventory.container.INamedContainerProvider;
+import net.minecraft.item.ItemStack;
+import net.minecraft.network.IPacket;
+import net.minecraft.potion.EffectInstance;
+import net.minecraft.tileentity.SignTileEntity;
+import net.minecraft.util.Hand;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
+import net.minecraft.util.math.vector.Vector3d;
+import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.chunk.IChunk;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.util.FakePlayer;
 
+import javax.annotation.Nullable;
+import java.util.OptionalInt;
 import java.util.UUID;
 
 public class FakePlayerEntity extends FakePlayer {
 
     private ServerWorld world;
     private GameProfile profile;
+    private Vector3d positionVec;
+    private BlockPos position;
 
     private FakePlayerEntity(ServerWorld world, GameProfile profile) {
         super(world, profile);
@@ -27,69 +40,120 @@ public class FakePlayerEntity extends FakePlayer {
         this.profile = profile;
     }
 
-    public static class Builder {
-        private FakePlayerEntity entity;
-        private ServerWorld world;
-        private GameProfile profile;
-        private MinecraftServer server;
+    private static final GameProfile DEFAULT_PROFILE = new GameProfile(
+            UUID.fromString("0d0c4ca0-4ff1-11e4-916c-0800200c9a66"),
+            "[Scarecrow]"
+    );
 
-        public Builder() {
 
-        }
+    public static FakePlayerEntity create( ServerWorld world, BlockPos pos, UUID uuid) {
+        GameProfile profile = uuid == null ?  new GameProfile(UUID.randomUUID(), UUID.randomUUID().toString()) : new GameProfile(uuid, uuid.toString());
 
-        public Builder server(MinecraftServer server) {
-            this.server = server;
+        FakePlayerEntity player = new FakePlayerEntity(world, getProfile(profile));
+        player.connection = new FakeNetHandler(player);
+        player.setState(pos);
+        player.preventEntitySpawning = false;
+        world.getPlayers().add(player);
 
-            return this;
-        }
+        return player;
+    }
 
-        public Builder world(ServerWorld world) {
-            this.world = world;
+    private static GameProfile getProfile(@Nullable GameProfile profile) {
+        return profile != null && profile.isComplete() ? profile : DEFAULT_PROFILE;
+    }
 
-            return this;
-        }
+    private void setState(BlockPos position) {
+        setRawPosition(position.getX() , position.getY() + 1, position.getZ() );
 
-        public Builder profile(GameProfile profile) {
-            this.profile = profile;
+        rotationYaw = 0.0f;
+        rotationPitch = 0.0f;
+        this.positionVec = new Vector3d(position.getX(), position.getY() + 01, position.getZ()  );
+        this.setPosition(position.getX() , position.getY() + 1, position.getZ() );
+        this.position = new BlockPos(position.getX() , position.getY() + 1, position.getZ());
+        inventory.clear();
+    }
 
-            return this;
-        }
-
-        public FakePlayerEntity build() {
-            if(profile == null)
-                profile = new GameProfile(UUID.randomUUID(), UUID.randomUUID().toString());
-
-            if(server == null)
-                throw new RuntimeException("Can not create a fake player without MinecraftServer object reference");
-
-            if(world == null)
-                throw new RuntimeException("Can not create a fake player without ServerWorld object reference");
-
-            entity = new FakePlayerEntity(world, profile);
-
-            entity.connection = new FakeServerPlayNetHandler(server, entity);
-
-            world.addNewPlayer(entity);
-
-            return entity;
-        }
+    public Vector3d getPositionVec() {
+        return this.positionVec;
     }
 
     @Override
-    public boolean isInvisible() {
-        return false;
-    }
-
-    @Override
-    public boolean isInvisibleToPlayer(PlayerEntity player) {
-        return false;
-    }
-
-    public ServerWorld getWorld() {
-        return world;
+    public BlockPos getPosition() {
+        return position;
     }
 
     public GameProfile getProfile() {
         return profile;
     }
+
+    @Override
+    public EntityType<?> getType() {
+        return RegistryHandler.FAKE_PLAYER.get();
+    }
+
+    @Override
+    public float getEyeHeight(Pose pose) {
+        return 0;
+    }
+
+    @Override
+    public float getStandingEyeHeight(Pose pose, EntitySize size) {
+        return 0;
+    }
+
+    //region Code which depends on the connection
+    @Override
+    public OptionalInt openContainer(INamedContainerProvider prover) {
+        return OptionalInt.empty();
+    }
+
+    @Override
+    public void sendEnterCombat() {
+    }
+
+    @Override
+    public void sendEndCombat() {
+    }
+
+    @Override
+    public boolean startRiding(Entity entityIn, boolean force) {
+        return false;
+    }
+
+    @Override
+    public void stopRiding() {
+    }
+
+    @Override
+    public void openSignEditor(SignTileEntity signTile) {
+    }
+
+    @Override
+    public void openHorseInventory(AbstractHorseEntity horse, IInventory inventory) {
+    }
+
+    @Override
+    public void openBook(ItemStack stack, Hand hand) {
+    }
+
+    @Override
+    public void closeScreen() {
+    }
+
+    @Override
+    public void updateHeldItem() {
+    }
+
+    @Override
+    protected void onNewPotionEffect(EffectInstance id) {
+    }
+
+    @Override
+    protected void onChangedPotionEffect(EffectInstance id, boolean apply) {
+    }
+
+    @Override
+    protected void onFinishedPotionEffect(EffectInstance effect) {
+    }
+    //endregion
 }

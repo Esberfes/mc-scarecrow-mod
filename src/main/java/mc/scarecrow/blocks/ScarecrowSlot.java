@@ -2,8 +2,8 @@ package mc.scarecrow.blocks;
 
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.container.Slot;
-import net.minecraft.item.EnderPearlItem;
 import net.minecraft.item.ItemStack;
+import net.minecraftforge.common.ForgeHooks;
 
 public class ScarecrowSlot extends Slot {
 
@@ -13,7 +13,6 @@ public class ScarecrowSlot extends Slot {
 
     @Override
     public boolean isItemValid(ItemStack stack) {
-        //return net.minecraftforge.common.ForgeHooks.getBurnTime(stack) > 0;
-        return stack.getItem() instanceof EnderPearlItem;
+        return ForgeHooks.getBurnTime(stack) > 0;
     }
 }

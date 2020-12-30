@@ -8,6 +8,7 @@ import net.minecraft.command.CommandSource;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -25,5 +26,11 @@ public class CommandsRegisterEventHandler {
         dispatcher.register(AllEntitiesCommand.register());
         dispatcher.register(CreateFakePlayerCommand.register());
         dispatcher.register(AllPlayersCommand.register());
+
+    }
+    @SubscribeEvent
+    public void serverStarting(FMLServerStartingEvent event)
+    {
+
     }
 }

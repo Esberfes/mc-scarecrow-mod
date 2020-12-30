@@ -1,12 +1,15 @@
 package mc.scarecrow.blocks;
 
+import mc.scarecrow.entity.FakePlayerEntity;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.material.MaterialColor;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.InventoryHelper;
 import net.minecraft.inventory.container.Container;
@@ -21,8 +24,10 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
+import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.ToolType;
 
 public class ScarecrowBlock extends Block {
@@ -83,10 +88,19 @@ public class ScarecrowBlock extends Block {
 
     @Override
     public void onBlockPlacedBy(World worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
+        super.onBlockPlacedBy(worldIn, pos, state, placer, stack);
+
         TileEntity tileentity = worldIn.getTileEntity(pos);
-        if (tileentity instanceof ScarecrowTile) {
-            // TODO crear fake player?
+        if (tileentity instanceof ScarecrowTile && !worldIn.isRemote && placer instanceof ServerPlayerEntity) {
+            ServerPlayerEntity playerEntity = (ServerPlayerEntity) placer;
+            ScarecrowTile scarecrowTile = (ScarecrowTile) tileentity;
+            scarecrowTile.loadAll(playerEntity);
         }
+    }
+
+    @Override
+    public void onLanded(IBlockReader worldIn, Entity entityIn) {
+        super.onLanded(worldIn, entityIn);
     }
 
     @Override
@@ -94,7 +108,7 @@ public class ScarecrowBlock extends Block {
         if (state.getBlock() != newState.getBlock()) {
             TileEntity tileentity = worldIn.getTileEntity(pos);
 
-            if (tileentity instanceof ScarecrowTile) {
+            if (tileentity instanceof ScarecrowTile && !worldIn.isRemote) {
                 InventoryHelper.dropInventoryItems(worldIn, pos, (ScarecrowTile) tileentity);
                 worldIn.updateComparatorOutputLevel(pos, this);
                 ((ScarecrowTile) tileentity).unloadAll();
@@ -106,9 +120,6 @@ public class ScarecrowBlock extends Block {
 
     @Override
     public void onBlockAdded(BlockState state, World worldIn, BlockPos pos, BlockState oldState, boolean isMoving) {
-        TileEntity tile = worldIn.getTileEntity(pos);
-        if (tile instanceof ScarecrowTile)
-            ((ScarecrowTile) tile).loadAll();
     }
 
     @Override

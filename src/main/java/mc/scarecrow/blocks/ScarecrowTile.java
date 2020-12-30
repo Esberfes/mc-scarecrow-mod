@@ -1,21 +1,18 @@
 package mc.scarecrow.blocks;
 
-import com.mojang.authlib.GameProfile;
+import mc.scarecrow.capabilities.ScarecrowTileCapabilities;
 import mc.scarecrow.entity.FakePlayerEntity;
 import mc.scarecrow.init.RegistryHandler;
-import mc.scarecrow.network.ClientProxy;
-import mc.scarecrow.network.ServerProxy;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.ItemStackHelper;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.NetworkManager;
-import net.minecraft.network.PacketDirection;
 import net.minecraft.network.play.server.SUpdateTileEntityPacket;
 import net.minecraft.tileentity.IChestLid;
 import net.minecraft.tileentity.ITickableTileEntity;
@@ -26,17 +23,18 @@ import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.util.SoundEvents;
 import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.util.FakePlayer;
-import net.minecraftforge.common.util.FakePlayerFactory;
-import net.minecraftforge.fml.DistExecutor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.UUID;
 
@@ -45,13 +43,22 @@ import static mc.scarecrow.constant.ScarecrowBlockConstants.INVENTORY_SIZE;
 @OnlyIn(value = Dist.CLIENT, _interface = IChestLid.class)
 public class ScarecrowTile extends LockableLootTileEntity implements IChestLid, ITickableTileEntity {
 
+    private static final Logger LOGGER = LogManager.getLogger();
+
+    private static String NTB_FAKE_PLAYER_UUID = "NTB_FAKE_PLAYER_UUID";
+    private static String NTB_OWNER_PLAYER_UUID = "NTB_OWNER_PLAYER_UUID";
+    private static String NTB_CHUNK_POS = "NTB_CHUNK_POS";
     private NonNullList<ItemStack> chestContents;
     protected float lidAngle;
     protected float prevLidAngle;
     protected int numPlayersUsing;
     private int ticksSinceSync;
-    private FakePlayer fakePlayer;
-    private boolean dataChanged = false;
+    private boolean dataChanged = true;
+
+    private FakePlayerEntity fakePlayerEntity;
+    private UUID fakePlayerUUID;
+    private PlayerEntity owner;
+    private UUID ownerUUID;
 
     public ScarecrowTile() {
         super(RegistryHandler.scarecrowTileBlock.get());
@@ -63,26 +70,20 @@ public class ScarecrowTile extends LockableLootTileEntity implements IChestLid, 
         return this.getItems().size();
     }
 
-    @Override
-    public SUpdateTileEntityPacket getUpdatePacket() {
-        CompoundNBT nbtTag = new CompoundNBT();
-        //Write your data into the nbtTag
-        return new SUpdateTileEntityPacket(getPos(), -1, nbtTag);
+    public FakePlayerEntity getFakePlayerEntity() {
+        return fakePlayerEntity;
     }
 
-    @Override
-    public void onDataPacket(NetworkManager net, SUpdateTileEntityPacket pkt) {
-        super.onDataPacket(net, pkt);
+    public void setFakePlayerEntity(FakePlayerEntity fakePlayerEntity) {
+        this.fakePlayerEntity = fakePlayerEntity;
     }
 
-    @Override
-    public CompoundNBT getUpdateTag() {
-        return super.getUpdateTag();
+    public PlayerEntity getOwner() {
+        return owner;
     }
 
-    @Override
-    public void handleUpdateTag(BlockState state, CompoundNBT tag) {
-        super.handleUpdateTag(state, tag);
+    public void setOwner(PlayerEntity owner) {
+        this.owner = owner;
     }
 
     @Override
@@ -119,6 +120,11 @@ public class ScarecrowTile extends LockableLootTileEntity implements IChestLid, 
                 this.lidAngle = 0.0F;
             }
         }
+        if(!world.isRemote() && (ticksSinceSync % 100 == 0))  {
+            if(owner != null)
+                setCustomName(owner.getDisplayName());
+        }
+
     }
 
     public static int getNumberOfPlayersUsing(World worldIn, LockableTileEntity lockableTileEntity, int ticksSinceSync, int x, int y, int z, int numPlayersUsing) {
@@ -147,6 +153,13 @@ public class ScarecrowTile extends LockableLootTileEntity implements IChestLid, 
         double d2 = (double) this.pos.getZ() + 0.5D;
 
         this.world.playSound(null, d0, d1, d2, soundIn, SoundCategory.BLOCKS, 0.5F, this.world.rand.nextFloat() * 0.1F + 0.9F);
+    }
+
+    @Override
+    public void onLoad() { // Se ejecuta en el servidor
+        if (world instanceof ServerWorld) {
+
+        }
     }
 
     @Override
@@ -221,45 +234,100 @@ public class ScarecrowTile extends LockableLootTileEntity implements IChestLid, 
     }
 
     @Override
+    public SUpdateTileEntityPacket getUpdatePacket() {
+        CompoundNBT compoundNBT = writeTag(new CompoundNBT());
+        //Write your data into the nbtTag
+        return new SUpdateTileEntityPacket(getPos(), 2, compoundNBT);
+    }
+
+    @Override
+    public void onDataPacket(NetworkManager net, SUpdateTileEntityPacket pkt) {
+        try {
+            handleTag(pkt.getNbtCompound());
+
+        } catch (Throwable e) {
+            LOGGER.error(e);
+        }
+    }
+
+    @Override
+    public CompoundNBT getUpdateTag() {
+        return writeTag(super.getUpdateTag());
+    }
+
+    @Override
+    public void handleUpdateTag(BlockState state, CompoundNBT tag) {
+        super.handleUpdateTag(state, tag);
+        handleTag(tag);
+    }
+
+    private void handleTag(CompoundNBT tag) {
+        try {
+            this.chestContents = NonNullList.withSize(this.getSizeInventory(), ItemStack.EMPTY);
+
+            if (!this.checkLootAndRead(tag)) {
+                ItemStackHelper.loadAllItems(tag, this.chestContents);
+            }
+
+        } catch (Throwable e) {
+            LOGGER.error(e);
+        }
+    }
+
+    private CompoundNBT writeTag(CompoundNBT tag) {
+        if (!this.checkLootAndWrite(tag))
+            ItemStackHelper.saveAllItems(tag, this.chestContents);
+
+        return tag;
+    }
+
+    @Override
     public void read(BlockState state, CompoundNBT compound) {
         super.read(state, compound);
-
-        this.chestContents = NonNullList.withSize(this.getSizeInventory(), ItemStack.EMPTY);
-
-        if (!this.checkLootAndRead(compound)) {
-            ItemStackHelper.loadAllItems(compound, this.chestContents);
-        }
+        handleTag(compound);
     }
 
     @Override
     public CompoundNBT write(CompoundNBT compound) {
         super.write(compound);
-
-        if (!this.checkLootAndWrite(compound)) {
-            ItemStackHelper.saveAllItems(compound, this.chestContents);
-        }
-
-        return compound;
+        return writeTag(compound);
     }
 
-    public void loadAll() {
-        DistExecutor.unsafeRunWhenOn(Dist.DEDICATED_SERVER,() -> new Runnable() {
-            @Override
-            public void run() {
-                
-            }
-        });
-    }
 
-    public void dataChanged() {
-        if (this.world.isRemote)
+    public final void updateBlock() {
+        if(this.world == null || this.world.isRemote)
             return;
         this.dataChanged = true;
         this.markDirty();
         this.world.notifyBlockUpdate(this.pos, this.getBlockState(), this.getBlockState(), 2);
     }
 
-    public void unloadAll() {
+    @Override
+    public void remove() {
+        super.remove();
+        unloadAll();
+    }
 
+    public void unloadAll(){
+        this.world.getCapability(ScarecrowTileCapabilities.TRACKER_CAPABILITY).ifPresent(tracker -> {
+            ChunkPos pos = this.world.getChunk(this.pos).getPos();
+            tracker.remove(new ChunkPos(pos.x , pos.z), this.pos);
+            if(owner != null)
+                 tracker.remove(owner.getGameProfile().getId(), this.pos);
+        });
+
+        if (this.fakePlayerEntity != null) {
+            this.fakePlayerEntity.getServerWorld().getPlayers().remove(fakePlayerEntity);
+        }
+    }
+
+    public void loadAll(ServerPlayerEntity serverPlayerEntity){
+        this.world.getCapability(ScarecrowTileCapabilities.TRACKER_CAPABILITY).ifPresent(tracker -> {
+            ChunkPos pos = this.world.getChunk(this.pos).getPos();
+            tracker.add(new ChunkPos(pos.x , pos.z), this.pos);
+            tracker.add(serverPlayerEntity.getGameProfile().getId(), this.pos);
+        });
+
+        this.updateBlock();
     }
 }

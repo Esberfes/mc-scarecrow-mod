@@ -3,7 +3,10 @@ package mc.scarecrow.init;
 import mc.scarecrow.blocks.ScarecrowBlock;
 import mc.scarecrow.blocks.ScarecrowContainer;
 import mc.scarecrow.blocks.ScarecrowTile;
+import mc.scarecrow.entity.FakePlayerEntity;
 import net.minecraft.block.Block;
+import net.minecraft.entity.EntityClassification;
+import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.item.BlockItem;
@@ -24,6 +27,15 @@ public class RegistryHandler {
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MOD_IDENTIFIER);
     public static final DeferredRegister<ContainerType<?>> CONTAINERS = DeferredRegister.create(ForgeRegistries.CONTAINERS, MOD_IDENTIFIER);
 
+    public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITIES, MOD_IDENTIFIER);
+
+    public static final RegistryObject<EntityType<FakePlayerEntity>> FAKE_PLAYER = ENTITIES.register( "fake_player", () ->
+            EntityType.Builder.<FakePlayerEntity>create( EntityClassification.MISC )
+                    .disableSerialization()
+                    .disableSummoning()
+                    .size( 0, 0 )
+                    .build( MOD_IDENTIFIER+ ":fake_player" ) );
+
     public static final RegistryObject<Block> scarecrowBlock = BLOCKS.register("scarecrow_block", ScarecrowBlock::new);
     public static final RegistryObject<Item> scarecrowBlockBuild = ITEMS.register("scarecrow_block", () ->
             new BlockItem(scarecrowBlock.get(), new Item.Properties().group(ItemGroup.BUILDING_BLOCKS))
@@ -38,7 +50,7 @@ public class RegistryHandler {
         TILES.register(FMLJavaModLoadingContext.get().getModEventBus());
         ITEMS.register(FMLJavaModLoadingContext.get().getModEventBus());
         CONTAINERS.register(FMLJavaModLoadingContext.get().getModEventBus());
-
+        ENTITIES.register(FMLJavaModLoadingContext.get().getModEventBus());
     }
 
     public static final RegistryObject<ContainerType<ScarecrowContainer>> scarecrowBlockContainer = CONTAINERS.register("scarecrow_block", () ->
@@ -46,7 +58,7 @@ public class RegistryHandler {
     );
 
     private static ScarecrowContainer create(int windowId, PlayerInventory playerInventory) {
-        return new  ScarecrowContainer(windowId, playerInventory);
+        return new ScarecrowContainer(windowId, playerInventory);
     }
 
 }

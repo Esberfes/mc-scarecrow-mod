@@ -1,5 +1,6 @@
 package mc.scarecrow;
 
+import mc.scarecrow.capabilities.ScarecrowTileCapabilities;
 import mc.scarecrow.init.RegistryHandler;
 import mc.scarecrow.network.ClientProxy;
 import mc.scarecrow.network.IProxy;
@@ -7,6 +8,7 @@ import mc.scarecrow.network.Networking;
 import mc.scarecrow.network.ServerProxy;
 import mc.scarecrow.client.screens.ScarecrowScreen;
 import net.minecraft.client.gui.ScreenManager;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
@@ -20,6 +22,8 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLDedicatedServerSetupEvent;
 import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.network.NetworkRegistry;
+import net.minecraftforge.fml.network.simple.SimpleChannel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -30,6 +34,7 @@ public class ScarecrowMod {
 
     private static final Logger LOGGER = LogManager.getLogger();
     public static final IProxy PROXY = DistExecutor.safeRunForDist(() -> ClientProxy::new, () -> ServerProxy::new);
+    public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(new ResourceLocation(MOD_IDENTIFIER, "main"), () -> "1", "1"::equals, "1"::equals);
 
     public ScarecrowMod() {
         final IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
@@ -54,6 +59,7 @@ public class ScarecrowMod {
 
     private void onCommonSetup(final FMLCommonSetupEvent event) {
         LOGGER.debug("onCommonSetup");
+        ScarecrowTileCapabilities.register();
         Networking.registerMessages();
     }
 
