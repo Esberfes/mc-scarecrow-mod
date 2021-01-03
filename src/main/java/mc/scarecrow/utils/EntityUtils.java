@@ -1,7 +1,7 @@
 package mc.scarecrow.utils;
 
 
-import mc.scarecrow.entity.FakePlayerEntity;
+import mc.scarecrow.common.entity.FakePlayerEntity;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;

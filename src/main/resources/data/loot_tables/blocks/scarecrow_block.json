@@ -2,17 +2,11 @@
   "type": "minecraft:block",
   "pools": [
     {
-      "name": "scarecrow:scarecrow_block",
+      "name": "scarecrow_block",
       "rolls": 1,
       "entries": [
         {
           "type": "minecraft:item",
-          "functions": [
-            {
-              "function": "minecraft:copy_name",
-              "source": "block_entity"
-            }
-          ],
           "name": "scarecrow:scarecrow_block"
         }
       ],
@@ -23,3 +17,4 @@
       ]
     }
   ]
+}
