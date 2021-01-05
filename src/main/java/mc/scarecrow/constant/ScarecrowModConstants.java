@@ -1,4 +1,4 @@
-package mc.scarecrow.mod.constant;
+package mc.scarecrow.constant;
 
 public interface ScarecrowModConstants {
     String MOD_IDENTIFIER = "scarecrow";

@@ -1,0 +1,6 @@
+{
+  "parent": "block/cube_all",
+  "textures": {
+    "all": "scarecrow:blocks/scarecrow_block"
+  }
+}
