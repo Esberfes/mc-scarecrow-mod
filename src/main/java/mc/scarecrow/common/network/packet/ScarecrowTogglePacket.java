@@ -7,12 +7,9 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 public class ScarecrowTogglePacket extends ScarecrowPacket {
-    private int xOffset, zOffset;
 
-    public ScarecrowTogglePacket(BlockPos pos, int xOffset, int zOffset) {
+    public ScarecrowTogglePacket(BlockPos pos) {
         super(pos);
-        this.xOffset = xOffset;
-        this.zOffset = zOffset;
     }
 
     public ScarecrowTogglePacket(PacketBuffer buffer) {
@@ -22,15 +19,11 @@ public class ScarecrowTogglePacket extends ScarecrowPacket {
     @Override
     public void encode(PacketBuffer buffer) {
         super.encode(buffer);
-        buffer.writeInt(this.xOffset);
-        buffer.writeInt(this.zOffset);
     }
 
     @Override
     protected void decodeBuffer(PacketBuffer buffer) {
         super.decodeBuffer(buffer);
-        this.xOffset = buffer.readInt();
-        this.zOffset = buffer.readInt();
     }
 
     public static ScarecrowTogglePacket decode(PacketBuffer buffer) {
@@ -39,6 +32,6 @@ public class ScarecrowTogglePacket extends ScarecrowPacket {
 
     @Override
     protected void handle(PlayerEntity player, World world, ScarecrowTile tile) {
-        tile.toggle(this.xOffset, this.zOffset);
+        tile.toggle();
     }
 }

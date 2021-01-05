@@ -16,6 +16,7 @@ public class ClientProxy implements IProxy {
     @Override
     public void init() {
         ScreenManager.registerFactory(ScarecrowMod.TYPE, ScarecrowScreen::new);
+
     }
 
     @Override

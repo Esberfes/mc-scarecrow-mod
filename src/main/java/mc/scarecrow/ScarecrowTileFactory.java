@@ -1,8 +1,8 @@
 package mc.scarecrow;
 
-import mc.scarecrow.common.block.ClientScarecrowTile;
-import mc.scarecrow.common.block.ScarecrowBaseTile;
-import mc.scarecrow.common.block.ServerScarecrowTile;
+import mc.scarecrow.common.block.tile.base.ScarecrowBaseTile;
+import mc.scarecrow.common.block.tile.strategy.ClientScarecrowTile;
+import mc.scarecrow.common.block.tile.strategy.ServerScarecrowTile;
 import mc.scarecrow.common.network.IProxy;
 
 import java.util.function.Supplier;

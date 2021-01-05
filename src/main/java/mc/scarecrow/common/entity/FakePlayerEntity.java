@@ -12,6 +12,7 @@ import net.minecraft.inventory.container.INamedContainerProvider;
 import net.minecraft.item.ItemStack;
 import net.minecraft.potion.EffectInstance;
 import net.minecraft.tileentity.SignTileEntity;
+import net.minecraft.util.DamageSource;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.vector.Vector3d;
@@ -51,6 +52,7 @@ public class FakePlayerEntity extends FakePlayer {
         player.preventEntitySpawning = false;
         world.getPlayers().add(player);
         player.setGameType(GameType.SURVIVAL);
+
         return player;
     }
 
@@ -59,14 +61,29 @@ public class FakePlayerEntity extends FakePlayer {
     }
 
     private void setState(BlockPos position) {
-        setRawPosition(position.getX() , position.getY() + 1, position.getZ() );
+        setRawPosition(position.getX(), position.getY() - 1, position.getZ());
 
         rotationYaw = 0.0f;
         rotationPitch = 0.0f;
-        this.positionVec = new Vector3d(position.getX(), position.getY() + 01, position.getZ()  );
-        this.setPosition(position.getX() , position.getY() + 1, position.getZ() );
-        this.position = new BlockPos(position.getX() , position.getY() + 1, position.getZ());
+        this.positionVec = new Vector3d(position.getX(), position.getY() - 1, position.getZ());
+        this.setPosition(position.getX(), position.getY() - 1, position.getZ());
+        this.position = new BlockPos(position.getX(), position.getY() - 1, position.getZ());
         inventory.clear();
+    }
+
+    @Override
+    public boolean isInvulnerableTo(DamageSource source) {
+        return false;
+    }
+
+    @Override
+    public float getHealth() {
+        return 10F;
+    }
+
+    @Override
+    public boolean isInvulnerable() {
+        return false;
     }
 
     public Vector3d getPositionVec() {
@@ -151,5 +168,6 @@ public class FakePlayerEntity extends FakePlayer {
     @Override
     protected void onFinishedPotionEffect(EffectInstance effect) {
     }
+
     //endregion
 }

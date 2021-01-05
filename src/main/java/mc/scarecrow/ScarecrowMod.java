@@ -8,7 +8,6 @@ import mc.scarecrow.common.network.IProxy;
 import mc.scarecrow.common.network.Networking;
 import mc.scarecrow.common.network.ServerProxy;
 import net.minecraft.inventory.container.ContainerType;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -25,8 +24,6 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLDedicatedServerSetupEvent;
 import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.network.NetworkRegistry;
-import net.minecraftforge.fml.network.simple.SimpleChannel;
 import net.minecraftforge.registries.IForgeRegistry;
 import net.minecraftforge.registries.ObjectHolder;
 import org.apache.logging.log4j.LogManager;
@@ -39,9 +36,10 @@ public class ScarecrowMod {
 
     private static final Logger LOGGER = LogManager.getLogger();
     public static final IProxy PROXY = DistExecutor.safeRunForDist(() -> ClientProxy::new, () -> ServerProxy::new);
-    public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(new ResourceLocation(MOD_IDENTIFIER, "main"), () -> "1", "1"::equals, "1"::equals);
+
     // TODO mover a client side
     public static final boolean IS_DEV_MODE = true;
+
     @ObjectHolder(MOD_IDENTIFIER + ":scarecrow_block")
     public static ContainerType<ScarecrowContainer> TYPE = null;
 
@@ -81,7 +79,6 @@ public class ScarecrowMod {
 
     @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
     public static class Register {
-
         @SubscribeEvent
         public static void onContainerRegistry(RegistryEvent.Register<ContainerType<?>> event) {
             IForgeRegistry<ContainerType<?>> r = event.getRegistry();
@@ -91,7 +88,6 @@ public class ScarecrowMod {
                     }
             ).setRegistryName("scarecrow_block"));
         }
-
     }
 
     // TODO mover a cliente side

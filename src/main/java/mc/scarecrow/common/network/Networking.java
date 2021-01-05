@@ -1,34 +1,32 @@
 package mc.scarecrow.common.network;
 
+import mc.scarecrow.common.network.packet.ScarecrowTogglePacket;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.network.NetworkDirection;
+import net.minecraftforge.fml.network.NetworkRegistry;
 import net.minecraftforge.fml.network.simple.SimpleChannel;
+
+import static mc.scarecrow.constant.ScarecrowModConstants.CHANNEL_PATH;
+import static mc.scarecrow.constant.ScarecrowModConstants.MOD_IDENTIFIER;
 
 public class Networking {
 
-    private static SimpleChannel INSTANCE;
+    public static SimpleChannel INSTANCE;
     private static int ID = 0;
 
     public static void registerMessages() {
-        /*
+
         INSTANCE = NetworkRegistry.newSimpleChannel(new ResourceLocation(MOD_IDENTIFIER, CHANNEL_PATH),
                 () -> "1.0",
                 s -> true,
                 s -> true);
 
-        INSTANCE.messageBuilder(PacketOpenGui.class, nextID())
-                .encoder((packetOpenGui, packetBuffer) -> {
-                })
-                .decoder(buf -> new PacketOpenGui())
-                .consumer(PacketOpenGui::handle)
+        INSTANCE.messageBuilder(ScarecrowTogglePacket.class, nextID())
+                .encoder(ScarecrowTogglePacket::encode)
+                .decoder(ScarecrowTogglePacket::decode)
+                .consumer(ScarecrowTogglePacket::handle)
                 .add();
-        INSTANCE.messageBuilder(PacketSpawn.class, nextID())
-                .encoder(PacketSpawn::toBytes)
-                .decoder(PacketSpawn::new)
-                .consumer(PacketSpawn::handle)
-                .add();
-                */
-
     }
 
     public static void sendToClient(Object packet, ServerPlayerEntity player) {

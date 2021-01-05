@@ -2,6 +2,7 @@ package mc.scarecrow.common.init;
 
 import mc.scarecrow.common.block.ScarecrowBlock;
 import mc.scarecrow.common.block.ScarecrowTile;
+import mc.scarecrow.common.block.TestBlock;
 import mc.scarecrow.common.entity.FakePlayerEntity;
 import net.minecraft.block.Block;
 import net.minecraft.entity.EntityClassification;
@@ -34,9 +35,13 @@ public class RegistryHandler {
                     .build(MOD_IDENTIFIER + ":fake_player"));
 
     public static final RegistryObject<Block> scarecrowBlock = BLOCKS.register("scarecrow_block", ScarecrowBlock::new);
+    public static final RegistryObject<Block> scarecrowBlockTest = BLOCKS.register("scarecrow_blocktest", TestBlock::new);
+
+
     public static final RegistryObject<Item> scarecrowBlockBuild = ITEMS.register("scarecrow_block", () ->
             new BlockItem(scarecrowBlock.get(), new Item.Properties().group(ItemGroup.BUILDING_BLOCKS))
     );
+
     public static final RegistryObject<TileEntityType<ScarecrowTile>> scarecrowTileBlock = TILES.register(
             "scarecrow_block",
             () -> TileEntityType.Builder.create(ScarecrowTile::new, scarecrowBlock.get()).build(null)

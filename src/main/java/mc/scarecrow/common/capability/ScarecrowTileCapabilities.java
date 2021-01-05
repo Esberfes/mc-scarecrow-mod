@@ -40,7 +40,15 @@ public class ScarecrowTileCapabilities {
 
     @CapabilityInject(ChunkTracker.class)
     public static Capability<ChunkTracker> TRACKER_CAPABILITY;
-    public static final List<FakePlayerEntity> fakePlayers = new LinkedList<>();
+    private static final List<FakePlayerEntity> fakePlayers = new LinkedList<>();
+
+    public static synchronized void addFakePlayer(FakePlayerEntity fakePlayerEntity) {
+        fakePlayers.add(fakePlayerEntity);
+    }
+
+    public static synchronized void removeFakePlayer(FakePlayerEntity fakePlayerEntity) {
+        fakePlayers.remove(fakePlayerEntity);
+    }
 
     public static void register() {
         CapabilityManager.INSTANCE.register(ChunkTracker.class, new Capability.IStorage<ChunkTracker>() {
@@ -129,14 +137,6 @@ public class ScarecrowTileCapabilities {
             }
 
             this.owners.get(uuid).add(loader);
-
-            TileEntity tileEntity = this.world.getTileEntity(loader);
-
-            if (tileEntity instanceof ScarecrowTile) {
-                FakePlayerEntity fakePlayerEntity = FakePlayerEntity.create(this.world, loader, null);
-                fakePlayers.add(fakePlayerEntity);
-                ((ScarecrowTile) tileEntity).setFakePlayerEntity(fakePlayerEntity);
-            }
         }
 
         public void remove(ChunkPos chunk, BlockPos loader) {
@@ -235,6 +235,11 @@ public class ScarecrowTileCapabilities {
 
     @SubscribeEvent
     public static void onWorldUnload(WorldEvent.Unload event) {
-        fakePlayers.removeIf((a) -> true);
+        if (event.getWorld() instanceof ServerWorld) {
+            fakePlayers.forEach(p -> {
+                if (p != null)
+                    ((ServerWorld) event.getWorld()).removePlayer(p);
+            });
+        }
     }
 }

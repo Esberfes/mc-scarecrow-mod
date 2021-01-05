@@ -4,6 +4,8 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import mc.scarecrow.common.block.ScarecrowTile;
+import mc.scarecrow.common.network.Networking;
+import mc.scarecrow.common.network.packet.ScarecrowTogglePacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.widget.button.AbstractButton;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -22,17 +24,14 @@ import static mc.scarecrow.constant.ScarecrowModConstants.MOD_IDENTIFIER;
 public class ScarecrowScreenButton extends AbstractButton {
 
     private static final ResourceLocation
-            BUTTON_OFF = new ResourceLocation(MOD_IDENTIFIER, "textures/gui/button_off.png"),
-            BUTTON_ON = new ResourceLocation(MOD_IDENTIFIER, "textures/gui/button_on.png");
+            BUTTON_OFF = new ResourceLocation(MOD_IDENTIFIER, "textures/screens/button_off.png"),
+            BUTTON_ON = new ResourceLocation(MOD_IDENTIFIER, "textures/screens/button_on.png");
 
-    public final int xOffset, zOffset;
     private final Supplier<ScarecrowTile> tileSupplier;
     private final ScarecrowScreenImage image;
 
-    public ScarecrowScreenButton(int x, int y, int xOffset, int zOffset, Supplier<ScarecrowTile> tileSupplier, World world, ChunkPos chunk) {
+    public ScarecrowScreenButton(int x, int y, Supplier<ScarecrowTile> tileSupplier, World world, ChunkPos chunk) {
         super(x, y, 15, 15, new StringTextComponent(""));
-        this.xOffset = xOffset;
-        this.zOffset = zOffset;
         this.tileSupplier = tileSupplier;
         this.image = new ScarecrowScreenImage(world, chunk);
         this.image.createTexture();
@@ -41,16 +40,15 @@ public class ScarecrowScreenButton extends AbstractButton {
     @Override
     public void onPress() {
         ScarecrowTile tile = this.tileSupplier.get();
-        /*
+
         if(tile != null)
-            ChunkLoaders.CHANNEL.sendToServer(new PacketToggleChunk(tile.getPos(), this.xOffset, this.zOffset));
-         */
+            Networking.INSTANCE.sendToServer(new ScarecrowTogglePacket(tile.getPos()));
     }
 
     @Override
     public void renderButton(MatrixStack matrix, int mouseX, int mouseY, float partialTicks) {
         Minecraft minecraft = Minecraft.getInstance();
-        minecraft.getTextureManager().bindTexture(this.isLoaded() ? BUTTON_ON : BUTTON_OFF);
+        minecraft.getTextureManager().bindTexture(this.isActive() ? BUTTON_ON : BUTTON_OFF);
         RenderSystem.color4f(1.0F, 1.0F, 1.0F, this.alpha);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -62,18 +60,16 @@ public class ScarecrowScreenButton extends AbstractButton {
         GlStateManager.bindTexture(this.image.textureId);
         this.drawTexture(this.x + 2, this.y + 2, 11, 11);
 
-        if (!this.isLoaded())
+        if (!this.isActive())
             fillGradient(matrix, this.x + 2, this.y + 2, this.x + 13, this.y + 13, 0xaa000000, 0xaa000000);
 
         this.renderBg(matrix, minecraft, mouseX, mouseY);
     }
 
-    public boolean isLoaded() {
+    public boolean isActive() {
         ScarecrowTile tile = this.tileSupplier.get();
-        /*
-        return tile != null && tile.isLoaded(this.xOffset, this.zOffset);
-         */
-        return false;
+
+        return tile != null && tile.isForceActive();
     }
 
     private void drawTexture(int x, int y, int width, int height) {

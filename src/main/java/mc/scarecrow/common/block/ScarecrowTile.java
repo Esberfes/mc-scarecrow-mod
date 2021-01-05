@@ -35,6 +35,7 @@ import net.minecraftforge.common.ForgeHooks;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static mc.scarecrow.constant.ScarecrowBlockConstants.INVENTORY_SIZE;
@@ -44,8 +45,12 @@ public class ScarecrowTile extends LockableLootTileEntity implements IChestLid, 
 
     private static final Logger LOGGER = LogManager.getLogger();
     private static String NTB_ACTIVE = "NTB_ACTIVE";
+    private static String NTB_FORCE_ACTIVE = "NTB_FORCE_ACTIVE";
     private static String NTB_CURRENT_BURN_TIME = "NTB_BURN_TIME";
     private static String NTB_TOTAL_BURN_TIME = "NTB_TOTAL_BURN_TIME";
+    private static String NTB_OWNER = "NTB_OWNER";
+    private static String NTB_OWNER_NAME = "NTB_OWNER_NAME";
+    private static String NTB_HEALTH = "NTB_HEALTH";
 
     private NonNullList<ItemStack> chestContents;
     protected float lidAngle;
@@ -57,11 +62,13 @@ public class ScarecrowTile extends LockableLootTileEntity implements IChestLid, 
     private int totalBurnTime;
     private int currentBurningTime;
     private final AtomicBoolean isActive;
+    private final AtomicBoolean isForceActive;
     private final AtomicBoolean dataChange;
     private final AtomicBoolean updateInProgress;
 
     private FakePlayerEntity fakePlayerEntity;
-    private PlayerEntity owner;
+    private UUID owner;
+    private String ownerName;
 
     public ScarecrowTile() {
         super(RegistryHandler.scarecrowTileBlock.get());
@@ -72,6 +79,8 @@ public class ScarecrowTile extends LockableLootTileEntity implements IChestLid, 
         this.updateInProgress.set(false);
         this.isActive = new AtomicBoolean();
         this.isActive.set(false);
+        this.isForceActive = new AtomicBoolean();
+        this.isForceActive.set(true);
     }
 
     @Override
@@ -87,17 +96,16 @@ public class ScarecrowTile extends LockableLootTileEntity implements IChestLid, 
         this.fakePlayerEntity = fakePlayerEntity;
     }
 
-    public PlayerEntity getOwner() {
+    public UUID getOwner() {
         return owner;
     }
 
-    public void setOwner(PlayerEntity owner) {
+    public void setOwner(UUID owner) {
         this.owner = owner;
     }
 
     @Override
     public void tick() {
-        ++this.fuelTick;
         int i = this.pos.getX();
         int j = this.pos.getY();
         int k = this.pos.getZ();
@@ -132,9 +140,12 @@ public class ScarecrowTile extends LockableLootTileEntity implements IChestLid, 
             }
         }
 
+        if (!world.isRemote())
+            ++this.fuelTick;
+
         if (!world.isRemote() && fuelTick % 10 == 0 && !this.updateInProgress.get()) {
             updateInProgress.set(true);
-            ((ServerWorld) world).getServer().deferTask(this::run);
+            ((ServerWorld) world).getServer().deferTask(this);
         }
     }
 
@@ -297,11 +308,20 @@ public class ScarecrowTile extends LockableLootTileEntity implements IChestLid, 
             if (tag.contains(NTB_ACTIVE))
                 this.isActive.set(tag.getBoolean(NTB_ACTIVE));
 
+            if (tag.contains(NTB_FORCE_ACTIVE))
+                this.isForceActive.set(tag.getBoolean(NTB_FORCE_ACTIVE));
+
             if (tag.contains(NTB_CURRENT_BURN_TIME))
                 this.currentBurningTime = tag.getInt(NTB_CURRENT_BURN_TIME);
 
             if (tag.contains(NTB_TOTAL_BURN_TIME))
                 this.totalBurnTime = tag.getInt(NTB_TOTAL_BURN_TIME);
+
+            if (tag.hasUniqueId(NTB_OWNER))
+                this.owner = tag.getUniqueId(NTB_OWNER);
+
+            if (tag.contains(NTB_OWNER_NAME))
+                this.ownerName = tag.getString(NTB_OWNER_NAME);
 
         } catch (Throwable e) {
             LOGGER.error(e);
@@ -315,6 +335,13 @@ public class ScarecrowTile extends LockableLootTileEntity implements IChestLid, 
         tag.putInt(NTB_CURRENT_BURN_TIME, this.currentBurningTime);
         tag.putInt(NTB_TOTAL_BURN_TIME, this.totalBurnTime);
         tag.putBoolean(NTB_ACTIVE, this.isActive.get());
+        tag.putBoolean(NTB_FORCE_ACTIVE, this.isForceActive.get());
+
+        if (this.owner != null)
+            tag.putUniqueId(NTB_OWNER, this.owner);
+
+        if (this.ownerName != null)
+            tag.putString(NTB_OWNER_NAME, this.ownerName);
 
         return tag;
     }
@@ -351,11 +378,11 @@ public class ScarecrowTile extends LockableLootTileEntity implements IChestLid, 
             ChunkPos pos = this.world.getChunk(this.pos).getPos();
             tracker.remove(new ChunkPos(pos.x, pos.z), this.pos);
             if (owner != null)
-                tracker.remove(owner.getGameProfile().getId(), this.pos);
+                tracker.remove(owner, this.pos);
         });
 
         if (this.fakePlayerEntity != null) {
-            this.fakePlayerEntity.getServerWorld().getPlayers().remove(fakePlayerEntity);
+            this.fakePlayerEntity.getServerWorld().removePlayer(fakePlayerEntity);
         }
 
         this.updateBlock();
@@ -366,13 +393,19 @@ public class ScarecrowTile extends LockableLootTileEntity implements IChestLid, 
             ChunkPos pos = this.world.getChunk(this.pos).getPos();
             tracker.add(new ChunkPos(pos.x, pos.z), this.pos);
             tracker.add(serverPlayerEntity.getGameProfile().getId(), this.pos);
+            this.owner = serverPlayerEntity.getGameProfile().getId();
+            this.ownerName = serverPlayerEntity.getGameProfile().getName();
         });
 
         this.updateBlock();
     }
 
     public boolean isActive() {
-        return isActive.get();
+        return isActive.get() && this.isForceActive.get();
+    }
+
+    public boolean isForceActive() {
+        return this.isForceActive.get();
     }
 
     public void setActive(boolean active) {
@@ -387,11 +420,15 @@ public class ScarecrowTile extends LockableLootTileEntity implements IChestLid, 
         return currentBurningTime;
     }
 
+    public String getOwnerName() {
+        return ownerName;
+    }
+
     @Override
     public void run() {
         try {
             // Si no le queda combustible se intenta recargar, charcoal tiene 1600
-            if (currentBurningTime <= 0 && chestContents.size() > 0) {
+            if (currentBurningTime <= 0 && chestContents.size() > 0 && this.isForceActive.get()) {
                 ItemStack itemStack = chestContents.stream().findFirst().get();
                 int count = itemStack.getCount();
                 if (count > 0) {
@@ -399,14 +436,15 @@ public class ScarecrowTile extends LockableLootTileEntity implements IChestLid, 
                     currentBurningTime = ForgeHooks.getBurnTime(refuel);
                 }
             }
-
+            // 1s == 400t
             totalBurnTime = currentBurningTime;
 
             for (ItemStack itemStack : chestContents)
                 totalBurnTime += ForgeHooks.getBurnTime(itemStack) * itemStack.getCount();
 
             if (currentBurningTime > 0) {
-                currentBurningTime -= fuelTick;
+                if (this.isForceActive.get())
+                    currentBurningTime -= fuelTick;
                 // Aseguramos numeros positivos
                 currentBurningTime = Math.max(currentBurningTime, 0);
                 fuelTick = 0;
@@ -414,15 +452,25 @@ public class ScarecrowTile extends LockableLootTileEntity implements IChestLid, 
 
             isActive.set(currentBurningTime > 0);
 
-            this.updateBlock();
+            if (!this.isActive() && fakePlayerEntity != null) {
+                ScarecrowTileCapabilities.removeFakePlayer(fakePlayerEntity);
+                ((ServerWorld) world).removePlayer(fakePlayerEntity);
+                this.fakePlayerEntity = null;
+            } else if (this.isActive() && fakePlayerEntity == null) {
+                this.fakePlayerEntity = FakePlayerEntity.create(((ServerWorld) world), pos, null);
+                ScarecrowTileCapabilities.addFakePlayer(this.fakePlayerEntity);
+            }
+
         } catch (Throwable e) {
             LOGGER.error(e);
         } finally {
             updateInProgress.set(false);
+            this.updateBlock();
         }
     }
 
-    public void toggle(int xOffset, int zOffset) {
-
+    public void toggle() {
+        this.isForceActive.set(!this.isForceActive.get());
+        updateBlock();
     }
 }
