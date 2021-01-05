@@ -23,8 +23,7 @@ public class ScarecrowBlock extends Block {
 
     @Override
     public TileEntity createTileEntity(BlockState state, IBlockReader world) {
-        // return ScarecrowTileFactory.getInstance(ScarecrowMod.PROXY);
-        return new ScarecrowTile();
+        return hasTileEntity(state) ? new ScarecrowTile() : null;
     }
 
     @Override
