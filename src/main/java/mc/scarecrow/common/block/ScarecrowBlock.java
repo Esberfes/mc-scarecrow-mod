@@ -1,5 +1,6 @@
 package mc.scarecrow.common.block;
 
+import mc.scarecrow.common.block.tile.ScarecrowTile;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.SoundType;

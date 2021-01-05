@@ -1,4 +1,4 @@
-package mc.scarecrow.common.block;
+package mc.scarecrow.common.block.tile;
 
 import mc.scarecrow.common.init.RegistryHandler;
 import net.minecraft.client.renderer.texture.ITickable;

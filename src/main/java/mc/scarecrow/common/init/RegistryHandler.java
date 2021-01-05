@@ -1,7 +1,7 @@
 package mc.scarecrow.common.init;
 
 import mc.scarecrow.common.block.ScarecrowBlock;
-import mc.scarecrow.common.block.ScarecrowTile;
+import mc.scarecrow.common.block.tile.ScarecrowTile;
 import net.minecraft.block.Block;
 import net.minecraft.entity.EntityType;
 import net.minecraft.item.BlockItem;
