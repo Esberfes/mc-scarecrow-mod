@@ -180,7 +180,7 @@ public class ScarecrowTile extends LockableLootTileEntity implements ITickableTi
 
     private void readTag(CompoundNBT nbt) {
         try {
-            if (nbt.contains("pojo"))
+            if (nbt.contains(NBT_TILE_DATA))
                 fromPojo(new Gson().fromJson(nbt.getString(NBT_TILE_DATA), ScarecrowTilePojo.class));
 
             this.chestContents.clear();

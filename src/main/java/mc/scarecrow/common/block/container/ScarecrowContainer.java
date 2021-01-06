@@ -32,10 +32,10 @@ public class ScarecrowContainer extends Container {
         assert scarecrowTile != null;
         ((IInventory) scarecrowTile).openInventory(playerInventory.player);
 
-        InitInventory();
+        initInventory();
     }
 
-    private void InitInventory() {
+    private void initInventory() {
         this.addSlot(new ScarecrowContainerItemSlot(scarecrowTile, 0, 12 + 4 * 18, 8 + 2 * 18));
 
         int leftCol = (SCREEN_SIZE_X - 162) / 2 + 1;
