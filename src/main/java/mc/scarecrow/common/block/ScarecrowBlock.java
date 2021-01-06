@@ -200,22 +200,22 @@ public class ScarecrowBlock extends Block {
 
     @Override
     public void onPlayerDestroy(IWorld worldIn, BlockPos pos, BlockState state) {
-        super.onPlayerDestroy(worldIn, pos, state);
         if (worldIn.isRemote())
             return;
+
         if (tilePos == null)
             return;
 
         TileEntity tileentity = worldIn.getTileEntity(tilePos);
-        if (!(tileentity instanceof ScarecrowTile))
-            return
-                    ;
-        ((ScarecrowTile) tileentity).onDestroy(worldIn, pos);
+        if ((tileentity instanceof ScarecrowTile)) {
+            ((ScarecrowTile) tileentity).onDestroy(worldIn, pos);
+        }
+
+        super.onPlayerDestroy(worldIn, pos, state);
     }
 
     @Override
     public void onExplosionDestroy(World worldIn, BlockPos pos, Explosion explosionIn) {
-        super.onExplosionDestroy(worldIn, pos, explosionIn);
         if (worldIn.isRemote())
             return;
 
@@ -227,11 +227,13 @@ public class ScarecrowBlock extends Block {
             return;
 
         ((ScarecrowTile) tileentity).onDestroy(worldIn, pos);
+
+        super.onExplosionDestroy(worldIn, pos, explosionIn);
     }
 
     @Override
     public void onBlockHarvested(World worldIn, BlockPos pos, BlockState state, PlayerEntity player) {
-        super.onBlockHarvested(worldIn, pos, state, player);
+
         if (worldIn.isRemote())
             return;
 
@@ -243,6 +245,8 @@ public class ScarecrowBlock extends Block {
             return;
 
         ((ScarecrowTile) tileentity).onDestroy(worldIn, pos);
+
+        super.onBlockHarvested(worldIn, pos, state, player);
     }
 
     @Override

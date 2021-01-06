@@ -481,8 +481,7 @@ public class ScarecrowTile extends LockableLootTileEntity implements IChestLid, 
     public void onDestroy(IWorld worldIn, BlockPos pos) {
         if (!isRemoved()) {
             this.world.getCapability(ScarecrowTileCapabilities.TRACKER_CAPABILITY).ifPresent(tracker -> {
-                tracker.getDummies(this.pos).stream()
-                        .filter(p -> p.compareTo(pos) != 0)
+                tracker.getDummies(this.pos)
                         .forEach(p -> worldIn.removeBlock(p, false));
             });
 
