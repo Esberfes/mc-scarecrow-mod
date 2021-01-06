@@ -2,12 +2,10 @@ package mc.scarecrow;
 
 import mc.scarecrow.common.capability.ScarecrowCapabilities;
 import mc.scarecrow.common.init.RegistryHandler;
-import mc.scarecrow.common.init.events.ClientEventHandler;
 import mc.scarecrow.common.network.ClientProxy;
 import mc.scarecrow.common.network.IProxy;
 import mc.scarecrow.common.network.ServerProxy;
 import mc.scarecrow.utils.LogUtils;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
@@ -29,9 +27,6 @@ public class ScarecrowMod {
         modEventBus.addListener(this::onCommonSetup);
 
         RegistryHandler.init();
-
-        // Initialize client side handler
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> modEventBus.addListener(ClientEventHandler::onClientSetup));
 
         LOGGER.debug("Finishing registry");
     }
