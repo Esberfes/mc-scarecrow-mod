@@ -2,7 +2,7 @@ package mc.scarecrow.client.screens;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
-import mc.scarecrow.common.block.ScarecrowContainer;
+import mc.scarecrow.common.block.container.ScarecrowContainer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IHasContainer;
 import net.minecraft.client.gui.screen.inventory.ContainerScreen;

@@ -1,5 +1,6 @@
-package mc.scarecrow.common.block;
+package mc.scarecrow.common.block.container;
 
+import mc.scarecrow.common.block.tile.ScarecrowTile;
 import mc.scarecrow.common.init.RegistryHandler;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
@@ -7,7 +8,6 @@ import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.inventory.container.Slot;
 import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.IWorldPosCallable;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -20,13 +20,13 @@ import static mc.scarecrow.constant.ScarecrowBlockConstants.*;
 
 public class ScarecrowContainer extends Container {
     private final World world;
-    private final TileEntity scarecrowTile;
+    private final ScarecrowTile scarecrowTile;
     private final IItemHandler playerInventory;
 
     public ScarecrowContainer(int id, World world, BlockPos pos, PlayerInventory playerInventory, PlayerEntity entity) {
         super(CONTAINER_TYPE, id);
         this.world = world;
-        scarecrowTile = world.getTileEntity(pos);
+        scarecrowTile = (ScarecrowTile) world.getTileEntity(pos);
         this.playerInventory = new InvWrapper(playerInventory);
 
         assert scarecrowTile != null;

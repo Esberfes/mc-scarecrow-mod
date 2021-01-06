@@ -1,7 +1,7 @@
 package mc.scarecrow.common.block.tile;
 
 import mc.scarecrow.common.block.ScarecrowBlock;
-import mc.scarecrow.common.block.ScarecrowContainer;
+import mc.scarecrow.common.block.container.ScarecrowContainer;
 import mc.scarecrow.common.init.RegistryHandler;
 import net.minecraft.block.Block;
 import net.minecraft.client.renderer.texture.ITickable;
@@ -13,10 +13,15 @@ import net.minecraft.tileentity.LockableLootTileEntity;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import static mc.scarecrow.constant.ScarecrowModConstants.INVENTORY_SIZE;
 
 public class ScarecrowTile extends LockableLootTileEntity implements ITickable {
+
+    private static final Logger LOGGER = LogManager.getLogger();
+
     private NonNullList<ItemStack> chestContents;
     private int numPlayersUsing;
 
@@ -48,8 +53,16 @@ public class ScarecrowTile extends LockableLootTileEntity implements ITickable {
 
     @Override
     public Container createMenu(int id, PlayerInventory player, PlayerEntity entity) {
-        assert world != null;
-        return new ScarecrowContainer(id, world, getPos(), player, entity);
+        try {
+            if (world == null)
+                throw new Exception("World is null on create menu");
+
+            return new ScarecrowContainer(id, world, getPos(), player, entity);
+        } catch (Throwable e) {
+            LOGGER.error(e);
+
+            return null;
+        }
     }
 
     @Override

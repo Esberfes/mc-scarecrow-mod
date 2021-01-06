@@ -23,7 +23,7 @@ public class RegistryHandler {
     public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITIES, MOD_IDENTIFIER);
 
     public static final RegistryObject<Block> scarecrowBlock = BLOCKS.register("scarecrow_block", ScarecrowBlock::new);
-    public static final RegistryObject<Item> scarecrowBlockBuild = ITEMS.register("scarecrow_block", () ->
+    public static final RegistryObject<Item> scarecrowBlockItem = ITEMS.register("scarecrow_block", () ->
             new BlockItem(scarecrowBlock.get(), new Item.Properties().group(ItemGroup.BUILDING_BLOCKS))
     );
 

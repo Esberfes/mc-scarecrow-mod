@@ -1,6 +1,6 @@
 package mc.scarecrow.common.init.events;
 
-import mc.scarecrow.common.block.ScarecrowContainer;
+import mc.scarecrow.common.block.container.ScarecrowContainer;
 import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.extensions.IForgeContainerType;
@@ -25,11 +25,15 @@ public class ContainersRegisterEventHandler {
 
     @SubscribeEvent
     public static void onContainerRegistry(RegistryEvent.Register<ContainerType<?>> event) {
-        IForgeRegistry<ContainerType<?>> r = event.getRegistry();
-        r.register(IForgeContainerType.create((windowId, inv, data) -> {
-                    BlockPos pos = data.readBlockPos();
-                    return new ScarecrowContainer(windowId, PROXY.getPlayerWorld(), pos, inv, PROXY.getPlayerEntity());
-                }
-        ).setRegistryName("scarecrow_block"));
+        try {
+            IForgeRegistry<ContainerType<?>> r = event.getRegistry();
+            r.register(IForgeContainerType.create((windowId, inv, data) -> {
+                        BlockPos pos = data.readBlockPos();
+                        return new ScarecrowContainer(windowId, PROXY.getPlayerWorld(), pos, inv, PROXY.getPlayerEntity());
+                    }
+            ).setRegistryName("scarecrow_block"));
+        } catch (Throwable e) {
+            LOGGER.error(e);
+        }
     }
 }
