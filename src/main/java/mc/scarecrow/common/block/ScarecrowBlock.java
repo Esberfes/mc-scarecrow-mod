@@ -70,7 +70,6 @@ public class ScarecrowBlock extends Block {
         try {
             if (!worldIn.isRemote()) {
                 TileEntity tileEntity = worldIn.getTileEntity(pos);
-
                 if (tileEntity instanceof ScarecrowTile) {
                     ServerWorld serverWorld = (ServerWorld) worldIn;
                     // Register into capabilities to keep chunk loaded

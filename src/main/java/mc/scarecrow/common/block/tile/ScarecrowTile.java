@@ -4,31 +4,35 @@ import mc.scarecrow.common.block.ScarecrowBlock;
 import mc.scarecrow.common.block.container.ScarecrowContainer;
 import mc.scarecrow.common.init.RegistryHandler;
 import net.minecraft.block.Block;
-import net.minecraft.client.renderer.texture.ITickable;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.item.ItemStack;
+import net.minecraft.tileentity.ITickableTileEntity;
 import net.minecraft.tileentity.LockableLootTileEntity;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.world.server.ServerWorld;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import static mc.scarecrow.constant.ScarecrowModConstants.INVENTORY_SIZE;
 
-public class ScarecrowTile extends LockableLootTileEntity implements ITickable {
+public class ScarecrowTile extends LockableLootTileEntity implements ITickableTileEntity {
 
     private static final Logger LOGGER = LogManager.getLogger();
 
     private NonNullList<ItemStack> chestContents;
     private int numPlayersUsing;
+    private final ScarecrowTileFuelManger fuelManger;
+    private int serverTickCounter;
 
     public ScarecrowTile() {
         super(RegistryHandler.scarecrowTileBlock.get());
         numPlayersUsing = 0;
         chestContents = NonNullList.withSize(INVENTORY_SIZE, ItemStack.EMPTY);
+        fuelManger = new ScarecrowTileFuelManger(chestContents);
     }
 
     @Override
@@ -72,7 +76,18 @@ public class ScarecrowTile extends LockableLootTileEntity implements ITickable {
 
     @Override
     public void tick() {
+        if (this.world != null && !this.world.isRemote && this.world instanceof ServerWorld)
+            runOnServer((ServerWorld) this.world);
+    }
 
+    private void runOnServer(ServerWorld serverWorld) {
+        serverTickCounter++;
+        if (serverTickCounter % 10 == 0) {
+            this.fuelManger.onUpdate();
+            serverTickCounter = 0;
+            LOGGER.debug("Total fuel: " + this.fuelManger.getTotalBurnTime());
+            LOGGER.debug("Current fuel: " + this.fuelManger.getCurrentBurningTime());
+        }
     }
 
     @Override
@@ -103,14 +118,12 @@ public class ScarecrowTile extends LockableLootTileEntity implements ITickable {
         }
     }
 
-    // TODO real implementation by fuel status condition
-
     /**
      * Called from WorldTick event when checked to keep chunk enabled
      *
      * @return this tile is active
      */
     public boolean isActive() {
-        return true;
+        return this.fuelManger.active();
     }
 }

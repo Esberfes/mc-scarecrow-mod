@@ -36,6 +36,8 @@ public class ScarecrowContainer extends Container {
     }
 
     private void InitInventory() {
+        this.addSlot(new ScarecrowContainerItemSlot(scarecrowTile, 0, 12 + 4 * 18, 8 + 2 * 18));
+
         int leftCol = (SCREEN_SIZE_X - 162) / 2 + 1;
 
         for (int playerInvRow = 0; playerInvRow < 3; playerInvRow++) {
@@ -48,10 +50,10 @@ public class ScarecrowContainer extends Container {
                 );
             }
         }
-        for (int hotbarSlot = 0; hotbarSlot < 9; hotbarSlot++) {
+        for (int hotBarSlot = 0; hotBarSlot < 9; hotBarSlot++) {
             this.addSlot(new SlotItemHandler(this.playerInventory,
-                    hotbarSlot,
-                    leftCol + hotbarSlot * 18, SCREEN_SIZE_Y - 24)
+                    hotBarSlot,
+                    leftCol + hotBarSlot * 18, SCREEN_SIZE_Y - 24)
             );
         }
     }

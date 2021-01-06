@@ -3,6 +3,7 @@ package mc.scarecrow.common.block.container;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.container.Slot;
 import net.minecraft.item.ItemStack;
+import net.minecraftforge.common.ForgeHooks;
 
 public class ScarecrowContainerItemSlot extends Slot {
 
@@ -12,7 +13,6 @@ public class ScarecrowContainerItemSlot extends Slot {
 
     @Override
     public boolean isItemValid(ItemStack stack) {
-        // TODO implement restrictions
-        return false;
+        return ForgeHooks.getBurnTime(stack) > 0;
     }
 }
