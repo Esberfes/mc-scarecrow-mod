@@ -33,11 +33,27 @@ public class RegistryHandler {
             () -> TileEntityType.Builder.create(ScarecrowTile::new, scarecrowBlock.get()).build(null)
     );
 
+    /*@ObjectHolder(MOD_IDENTIFIER + ":scarecrow_block")
+    public static ContainerType<ScarecrowContainer> CONTAINER_TYPE = null;*/
+
+    public RegistryHandler() {
+    }
+
     public static void init() {
         BLOCKS.register(FMLJavaModLoadingContext.get().getModEventBus());
         TILES.register(FMLJavaModLoadingContext.get().getModEventBus());
         ITEMS.register(FMLJavaModLoadingContext.get().getModEventBus());
         ENTITIES.register(FMLJavaModLoadingContext.get().getModEventBus());
     }
+
+    /*@SubscribeEvent
+    public static void onContainerRegistry(RegistryEvent.Register<ContainerType<?>> event) {
+        IForgeRegistry<ContainerType<?>> r = event.getRegistry();
+        r.register(IForgeContainerType.create((windowId, inv, data) -> {
+                BlockPos pos = data.readBlockPos();
+                return new ScarecrowContainer(windowId, PROXY.getPlayerWorld(), pos, inv, PROXY.getPlayerEntity());
+            }
+        ).setRegistryName("scarecrow_block"));
+    }*/
 
 }
