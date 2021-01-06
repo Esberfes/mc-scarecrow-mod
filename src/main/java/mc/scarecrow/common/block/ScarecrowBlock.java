@@ -1,6 +1,5 @@
 package mc.scarecrow.common.block;
 
-import com.mojang.authlib.GameProfile;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.SoundType;
@@ -16,8 +15,7 @@ import net.minecraft.inventory.container.Container;
 import net.minecraft.inventory.container.INamedContainerProvider;
 import net.minecraft.item.BlockItemUseContext;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemUseContext;
-import net.minecraft.item.Items;
+import net.minecraft.state.BooleanProperty;
 import net.minecraft.state.DirectionProperty;
 import net.minecraft.state.StateContainer;
 import net.minecraft.state.properties.BlockStateProperties;
@@ -30,24 +28,27 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
-import net.minecraft.util.math.vector.Vector3d;
+import net.minecraft.world.Explosion;
 import net.minecraft.world.IBlockReader;
+import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
-import net.minecraft.world.server.ServerWorld;
-import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.common.ToolType;
 import net.minecraftforge.common.util.FakePlayer;
-import net.minecraftforge.common.util.FakePlayerFactory;
 import net.minecraftforge.fml.network.NetworkHooks;
 
-import javax.annotation.Nullable;
-import java.util.UUID;
+import java.util.Arrays;
 
 public class ScarecrowBlock extends Block {
 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+    public static final BooleanProperty WITH_TILE = BooleanProperty.create("withtile");
+    public static final BooleanProperty TILE_POS = BooleanProperty.create("tilepos");
 
-    private boolean hasTileEntity;
+    private BlockPos tilePos;
+
+    public void setTilePos(BlockPos tilePos) {
+        this.tilePos = tilePos;
+    }
 
     public ScarecrowBlock() {
         super(Properties
@@ -57,39 +58,39 @@ public class ScarecrowBlock extends Block {
                 .harvestLevel(1)
                 .harvestTool(ToolType.PICKAXE));
 
-        setDefaultState(getDefaultState()
+        setDefaultState(getStateContainer().getBaseState()
                 .with(FACING, Direction.NORTH)
+                .with(WITH_TILE, true)
         );
 
-        hasTileEntity = true;
+    }
+
+    @Override
+    public BlockState getStateForPlacement(BlockItemUseContext placement) {
+        return getDefaultState()
+                .with(FACING, Direction.NORTH)
+                .with(WITH_TILE, true);
     }
 
     @Override
     protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
-    }
-
-    @Nullable
-    @Override
-    public BlockState getStateForPlacement(BlockItemUseContext placement) {
-        return getDefaultState().with(FACING, placement.getPlacementHorizontalFacing().getOpposite());
+        builder.add(FACING, WITH_TILE);
     }
 
     @Override
     public TileEntity createTileEntity(BlockState state, IBlockReader world) {
-        // return ScarecrowTileFactory.getInstance(ScarecrowMod.PROXY);
-        return hasTileEntity ? new ScarecrowTile() : null;
+        return state.get(WITH_TILE) ? new ScarecrowTile() : null;
     }
 
     @Override
     public boolean hasTileEntity(BlockState state) {
-        return true;
+        return state.get(WITH_TILE);
     }
 
     @Override
     public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
         if (!worldIn.isRemote) {
-            TileEntity tileEntity = worldIn.getTileEntity(pos);
+            TileEntity tileEntity = worldIn.getTileEntity(tilePos);
             if (tileEntity instanceof INamedContainerProvider) {
                 NetworkHooks.openGui((ServerPlayerEntity) player, (INamedContainerProvider) tileEntity, tileEntity.getPos());
             } else {
@@ -131,60 +132,47 @@ public class ScarecrowBlock extends Block {
         }
         TileEntity tileentity = worldIn.getTileEntity(pos);
         if (tileentity instanceof ScarecrowTile && !worldIn.isRemote && placer instanceof ServerPlayerEntity) {
+
             BlockPos oldPos = new BlockPos(pos);
             BlockState newState = state.with(FACING, Direction.NORTH);
             BlockPos newPos = pos.add(0, 2, 0);
-
             try {
                 ServerPlayerEntity playerEntity = (ServerPlayerEntity) placer;
                 ScarecrowTile scarecrowTile = (ScarecrowTile) tileentity;
-                if (worldIn.setBlockState(newPos, newState, 0)) {
-                    Block block = worldIn.getBlockState(newPos).getBlock();
-                    if (block == state.getBlock()) {
-                        TileEntity newTile = worldIn.getTileEntity(newPos);
-                        if (newTile instanceof ScarecrowTile) {
 
-                            ScarecrowTile scarecrowTile1 = (ScarecrowTile) newTile;
-                            scarecrowTile1.setWorldAndPos(worldIn, newPos);
-                            worldIn.removeBlock(oldPos, false);
-                            worldIn.removeTileEntity(oldPos);
-                            scarecrowTile1.loadAll(playerEntity);
+                BlockPos[] positions = new BlockPos[]{
+                        pos.add(0, 1, 0),
+                        pos.add(0, 2, 0),
+                        pos.add(1, 2, 0),
+                        pos.add(-1, 2, 0),
+                        pos.add(0, 3, 0)
+                };
 
-                            FakePlayer fakePlayer = FakePlayerFactory.get((ServerWorld) worldIn, new GameProfile(UUID.randomUUID(), UUID.randomUUID().toString()));
-                            fakePlayer.setPosition(newPos.getX(), newPos.getY() + 1, newPos.getZ());
-                            ItemStack itemStack = new ItemStack(Items.COBBLESTONE, 5);
-                            fakePlayer.setHeldItem(Hand.MAIN_HAND, itemStack);
+                if (Arrays.stream(positions).allMatch(worldIn::isAirBlock)) {
+                    for (int i = 0; i < positions.length; i++) {
+                        if (!worldIn.setBlockState(positions[i], state.with(WITH_TILE, false), 3)) {
+                            for (int x = i - 1; x >= 0; x--)
+                                worldIn.removeBlock(positions[i], false);
 
-                            if (!ForgeHooks.onPlaceItemIntoWorld(new ItemUseContext(fakePlayer, Hand.MAIN_HAND,
-                                    new BlockRayTraceResult(new Vector3d(0, 0, 0), Direction.UP, newPos, false))).isSuccessOrConsume())
-                                throw new Exception();
+                            worldIn.removeBlock(pos, false);
+                            worldIn.removeTileEntity(pos);
 
-                            if (!ForgeHooks.onPlaceItemIntoWorld(new ItemUseContext(fakePlayer, Hand.MAIN_HAND,
-                                    new BlockRayTraceResult(new Vector3d(0, 0, 0), Direction.DOWN, newPos, false))).isSuccessOrConsume())
-                                throw new Exception();
-                            if (!ForgeHooks.onPlaceItemIntoWorld(new ItemUseContext(fakePlayer, Hand.MAIN_HAND,
-                                    new BlockRayTraceResult(new Vector3d(0, 0, 0), Direction.UP, new BlockPos(newPos).add(1, 0, 0), false))).isSuccessOrConsume())
-                                throw new Exception();
-                            if (!ForgeHooks.onPlaceItemIntoWorld(new ItemUseContext(fakePlayer, Hand.MAIN_HAND,
-                                    new BlockRayTraceResult(new Vector3d(1, 0, 0), Direction.UP, new BlockPos(newPos).add(-1, 0, 0), false))).isSuccessOrConsume())
-                                throw new Exception();
-                            if (!ForgeHooks.onPlaceItemIntoWorld(new ItemUseContext(fakePlayer, Hand.MAIN_HAND,
-                                    new BlockRayTraceResult(new Vector3d(0, 0, 0), Direction.DOWN, new BlockPos(newPos).add(0, -1, 0), false))).isSuccessOrConsume())
-                                throw new Exception();
-
-                            ((ServerWorld) worldIn).removePlayer(fakePlayer, false);
-
+                            return;
                         }
+                        BlockState blockState = worldIn.getBlockState(positions[i]);
+                        ((ScarecrowBlock) blockState.getBlock()).tilePos = pos;
                     }
                 } else {
                     worldIn.removeBlock(pos, false);
-                    throw new Exception();
+                    worldIn.removeTileEntity(pos);
                 }
+
+                scarecrowTile.loadAll(playerEntity, positions);
+
             } catch (Throwable e) {
                 worldIn.removeBlock(pos, false);
                 worldIn.removeBlock(newPos, false);
             }
-
         }
     }
 
@@ -196,9 +184,11 @@ public class ScarecrowBlock extends Block {
     @Override
     public void onReplaced(BlockState state, World worldIn, BlockPos pos, BlockState newState, boolean isMoving) {
         if (state.getBlock() != newState.getBlock()) {
-            TileEntity tileentity = worldIn.getTileEntity(pos);
+            if (worldIn.isRemote)
+                return;
 
-            if (tileentity instanceof ScarecrowTile && !worldIn.isRemote) {
+            TileEntity tileentity = worldIn.getTileEntity(tilePos);
+            if (tileentity instanceof ScarecrowTile) {
                 InventoryHelper.dropInventoryItems(worldIn, pos, (ScarecrowTile) tileentity);
                 worldIn.updateComparatorOutputLevel(pos, this);
                 ((ScarecrowTile) tileentity).unloadAll();
@@ -209,7 +199,60 @@ public class ScarecrowBlock extends Block {
     }
 
     @Override
+    public void onPlayerDestroy(IWorld worldIn, BlockPos pos, BlockState state) {
+        super.onPlayerDestroy(worldIn, pos, state);
+        if (worldIn.isRemote())
+            return;
+        if (tilePos == null)
+            return;
+
+        TileEntity tileentity = worldIn.getTileEntity(tilePos);
+        if (!(tileentity instanceof ScarecrowTile))
+            return
+                    ;
+        ((ScarecrowTile) tileentity).onDestroy(worldIn, pos);
+    }
+
+    @Override
+    public void onExplosionDestroy(World worldIn, BlockPos pos, Explosion explosionIn) {
+        super.onExplosionDestroy(worldIn, pos, explosionIn);
+        if (worldIn.isRemote())
+            return;
+
+        if (tilePos == null)
+            return;
+
+        TileEntity tileentity = worldIn.getTileEntity(tilePos);
+        if (!(tileentity instanceof ScarecrowTile))
+            return;
+
+        ((ScarecrowTile) tileentity).onDestroy(worldIn, pos);
+    }
+
+    @Override
+    public void onBlockHarvested(World worldIn, BlockPos pos, BlockState state, PlayerEntity player) {
+        super.onBlockHarvested(worldIn, pos, state, player);
+        if (worldIn.isRemote())
+            return;
+
+        if (tilePos == null)
+            return;
+
+        TileEntity tileentity = worldIn.getTileEntity(tilePos);
+        if (!(tileentity instanceof ScarecrowTile))
+            return;
+
+        ((ScarecrowTile) tileentity).onDestroy(worldIn, pos);
+    }
+
+    @Override
+    public void onEntityWalk(World worldIn, BlockPos pos, Entity entityIn) {
+        super.onEntityWalk(worldIn, pos, entityIn);
+    }
+
+    @Override
     public void onBlockAdded(BlockState state, World worldIn, BlockPos pos, BlockState oldState, boolean isMoving) {
+
     }
 
     @Override
@@ -222,13 +265,7 @@ public class ScarecrowBlock extends Block {
         return Container.calcRedstoneFromInventory((IInventory) worldIn.getTileEntity(pos));
     }
 
-    public boolean isHasTileEntity() {
-        return hasTileEntity;
+    public BlockPos getTilePos() {
+        return tilePos;
     }
-
-    public void setHasTileEntity(boolean hasTileEntity) {
-        this.hasTileEntity = hasTileEntity;
-    }
-
-
 }

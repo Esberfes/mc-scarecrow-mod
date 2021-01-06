@@ -23,10 +23,12 @@ import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.util.SoundEvents;
 import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.api.distmarker.Dist;
@@ -369,14 +371,14 @@ public class ScarecrowTile extends LockableLootTileEntity implements IChestLid, 
 
     @Override
     public void remove() {
-        super.remove();
-        unloadAll();
+        onDestroy(world, getPos());
     }
 
     public void unloadAll() {
         this.world.getCapability(ScarecrowTileCapabilities.TRACKER_CAPABILITY).ifPresent(tracker -> {
             ChunkPos pos = this.world.getChunk(this.pos).getPos();
             tracker.remove(new ChunkPos(pos.x, pos.z), this.pos);
+            tracker.remove(this.pos);
             if (owner != null)
                 tracker.remove(owner, this.pos);
         });
@@ -388,11 +390,12 @@ public class ScarecrowTile extends LockableLootTileEntity implements IChestLid, 
         this.updateBlock();
     }
 
-    public void loadAll(ServerPlayerEntity serverPlayerEntity) {
+    public void loadAll(ServerPlayerEntity serverPlayerEntity, BlockPos[] positions) {
         this.world.getCapability(ScarecrowTileCapabilities.TRACKER_CAPABILITY).ifPresent(tracker -> {
             ChunkPos pos = this.world.getChunk(this.pos).getPos();
             tracker.add(new ChunkPos(pos.x, pos.z), this.pos);
             tracker.add(serverPlayerEntity.getGameProfile().getId(), this.pos);
+            tracker.add(this.pos, positions);
             this.owner = serverPlayerEntity.getGameProfile().getId();
             this.ownerName = serverPlayerEntity.getGameProfile().getName();
         });
@@ -469,8 +472,26 @@ public class ScarecrowTile extends LockableLootTileEntity implements IChestLid, 
         }
     }
 
+
     public void toggle() {
         this.isForceActive.set(!this.isForceActive.get());
         updateBlock();
+    }
+
+    public void onDestroy(IWorld worldIn, BlockPos pos) {
+        if (!isRemoved()) {
+            this.world.getCapability(ScarecrowTileCapabilities.TRACKER_CAPABILITY).ifPresent(tracker -> {
+                tracker.getDummies(this.pos).stream()
+                        .filter(p -> p.compareTo(pos) != 0)
+                        .forEach(p -> worldIn.removeBlock(p, false));
+            });
+
+            unloadAll();
+
+            this.world.destroyBlock(getPos(), false);
+            this.world.removeTileEntity(getPos());
+
+            super.remove();
+        }
     }
 }

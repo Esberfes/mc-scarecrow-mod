@@ -1,7 +1,9 @@
 package mc.scarecrow.common.capability;
 
+import mc.scarecrow.common.block.ScarecrowBlock;
 import mc.scarecrow.common.block.ScarecrowTile;
 import mc.scarecrow.common.entity.FakePlayerEntity;
+import net.minecraft.block.Block;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.INBT;
 import net.minecraft.nbt.LongArrayNBT;
@@ -94,7 +96,7 @@ public class ScarecrowTileCapabilities {
         private final ServerWorld world;
         private final Map<ChunkPos, List<BlockPos>> chunks = new HashMap<>();
         private final Map<UUID, List<BlockPos>> owners = new HashMap<>();
-
+        private final Map<BlockPos, List<BlockPos>> dummies = new HashMap<>();
 
         public ChunkTracker(ServerWorld world) {
             this.world = world;
@@ -116,6 +118,15 @@ public class ScarecrowTileCapabilities {
             this.world.getTileEntity(loader);
 
             this.chunks.get(chunk).add(loader);
+        }
+
+        public void add(BlockPos pos, BlockPos[] positions) {
+            if (!this.dummies.containsKey(pos))
+                this.dummies.put(pos, Arrays.asList(positions));
+        }
+
+        public void remove(BlockPos pos) {
+            this.dummies.remove(pos);
         }
 
         public void remove(UUID uuid, BlockPos loader) {
@@ -150,8 +161,14 @@ public class ScarecrowTileCapabilities {
                 this.chunks.get(chunk).remove(loader);
         }
 
+        public List<BlockPos> getDummies(BlockPos pos) {
+            return this.dummies.containsKey(pos) ? this.dummies.get(pos) : new ArrayList<>();
+        }
+
         public CompoundNBT write() {
             CompoundNBT compound = new CompoundNBT();
+
+            CompoundNBT compoundChunks = new CompoundNBT();
             for (Map.Entry<ChunkPos, List<BlockPos>> entry : this.chunks.entrySet()) {
                 CompoundNBT chunkTag = new CompoundNBT();
                 chunkTag.putLong("chunk", entry.getKey().asLong());
@@ -159,9 +176,11 @@ public class ScarecrowTileCapabilities {
                 LongArrayNBT blocks = new LongArrayNBT(entry.getValue().stream().map(BlockPos::toLong).collect(Collectors.toList()));
                 chunkTag.put("blocks", blocks);
 
-                compound.put(entry.getKey().x + ";" + entry.getKey().z, chunkTag);
+                compoundChunks.put(entry.getKey().x + ";" + entry.getKey().z, chunkTag);
             }
+            compound.put("chunkstag", compoundChunks);
 
+            CompoundNBT compoundBlocks = new CompoundNBT();
             for (Map.Entry<UUID, List<BlockPos>> entry : this.owners.entrySet()) {
                 CompoundNBT ownerTag = new CompoundNBT();
                 ownerTag.putUniqueId("uuid", entry.getKey());
@@ -169,29 +188,65 @@ public class ScarecrowTileCapabilities {
                 LongArrayNBT blocks = new LongArrayNBT(entry.getValue().stream().map(BlockPos::toLong).collect(Collectors.toList()));
                 ownerTag.put("blocks", blocks);
 
-                compound.put(entry.getKey().toString(), ownerTag);
+                compoundBlocks.put(entry.getKey().toString(), ownerTag);
             }
+            compound.put("blockstag", compoundBlocks);
+
+            CompoundNBT dummiesChunks = new CompoundNBT();
+            for (Map.Entry<BlockPos, List<BlockPos>> entry : this.dummies.entrySet()) {
+                CompoundNBT blockPosTag = new CompoundNBT();
+                blockPosTag.putLong("pos", entry.getKey().toLong());
+
+                LongArrayNBT blocks = new LongArrayNBT(entry.getValue().stream().map(BlockPos::toLong).collect(Collectors.toList()));
+                blockPosTag.put("positions", blocks);
+
+                dummiesChunks.put(String.valueOf(entry.getKey().toLong()), blockPosTag);
+            }
+            compound.put("dummiestag", dummiesChunks);
 
             return compound;
         }
 
         public void read(CompoundNBT compound) {
             for (String key : compound.keySet()) {
-                if (key.contains(";")) {
-                    CompoundNBT chunkTag = compound.getCompound(key);
-                    ChunkPos chunk = new ChunkPos(chunkTag.getLong("chunk"));
-
-                    LongArrayNBT blocks = (LongArrayNBT) chunkTag.get("blocks");
-                    Arrays.stream(blocks.getAsLongArray()).mapToObj(BlockPos::fromLong).forEach(pos -> this.add(chunk, pos));
-                } else {
-                    CompoundNBT ownerTag = compound.getCompound(key);
-                    UUID uuid = ownerTag.getUniqueId("uuid");
-
-                    LongArrayNBT blocks = (LongArrayNBT) ownerTag.get("blocks");
-                    Arrays.stream(blocks.getAsLongArray()).mapToObj(BlockPos::fromLong).forEach(pos -> this.add(uuid, pos));
+                switch (key) {
+                    case "chunkstag":
+                        CompoundNBT chunksTag = compound.getCompound(key);
+                        for (String subkey : chunksTag.keySet()) {
+                            CompoundNBT chunkTag = chunksTag.getCompound(subkey);
+                            ChunkPos chunk = new ChunkPos(chunkTag.getLong("chunk"));
+                            LongArrayNBT blocks = (LongArrayNBT) chunkTag.get("blocks");
+                            Arrays.stream(blocks.getAsLongArray()).mapToObj(BlockPos::fromLong).forEach(pos -> this.add(chunk, pos));
+                        }
+                        break;
+                    case "blockstag":
+                        CompoundNBT ownersTag = compound.getCompound(key);
+                        for (String subkey : ownersTag.keySet()) {
+                            CompoundNBT ownerTag = compound.getCompound(subkey);
+                            UUID uuid = ownerTag.getUniqueId("uuid");
+                            LongArrayNBT blocks = (LongArrayNBT) ownerTag.get("blocks");
+                            Arrays.stream(blocks.getAsLongArray()).mapToObj(BlockPos::fromLong).forEach(pos -> this.add(uuid, pos));
+                        }
+                        break;
+                    case "dummiestag":
+                        CompoundNBT dimmiesTag = compound.getCompound(key);
+                        for (String subkey : dimmiesTag.keySet()) {
+                            CompoundNBT dummieTag = dimmiesTag.getCompound(subkey);
+                            BlockPos pos = BlockPos.fromLong(dummieTag.getLong("pos"));
+                            LongArrayNBT positions = (LongArrayNBT) dummieTag.get("positions");
+                            List<BlockPos> posList = Arrays.stream(positions.getAsLongArray()).mapToObj(BlockPos::fromLong).collect(Collectors.toList());
+                            for (BlockPos p : posList) {
+                                Block block = world.getBlockState(p).getBlock();
+                                if (block instanceof ScarecrowBlock)
+                                    ((ScarecrowBlock) block).setTilePos(pos);
+                            }
+                            dummies.put(pos, posList);
+                        }
+                        break;
                 }
             }
         }
+
 
     }
 
