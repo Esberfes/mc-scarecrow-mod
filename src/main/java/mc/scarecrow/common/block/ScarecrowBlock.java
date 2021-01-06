@@ -2,6 +2,7 @@ package mc.scarecrow.common.block;
 
 import mc.scarecrow.common.block.tile.ScarecrowTile;
 import mc.scarecrow.common.capability.ScarecrowCapabilities;
+import mc.scarecrow.utils.LogUtils;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.SoundType;
@@ -80,7 +81,7 @@ public class ScarecrowBlock extends Block {
                 }
             }
         } catch (Throwable e) {
-            LOGGER.error(e);
+            LogUtils.printError(LOGGER, e);
         }
     }
 

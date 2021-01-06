@@ -1,6 +1,7 @@
 package mc.scarecrow.common.init.events;
 
 import mc.scarecrow.ScarecrowMod;
+import mc.scarecrow.utils.LogUtils;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
@@ -19,7 +20,7 @@ public class ClientEventHandler {
         try {
             ScarecrowMod.PROXY.init();
         } catch (Throwable e) {
-            LOGGER.error(e);
+            LogUtils.printError(LOGGER, e);
         }
     }
 }

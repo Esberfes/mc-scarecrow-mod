@@ -6,6 +6,7 @@ import mc.scarecrow.common.init.events.ClientEventHandler;
 import mc.scarecrow.common.network.ClientProxy;
 import mc.scarecrow.common.network.IProxy;
 import mc.scarecrow.common.network.ServerProxy;
+import mc.scarecrow.utils.LogUtils;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.DistExecutor;
@@ -39,7 +40,7 @@ public class ScarecrowMod {
         try {
             ScarecrowCapabilities.registerCapabilities();
         } catch (Throwable e) {
-            LOGGER.error(e);
+            LogUtils.printError(LOGGER, e);
         }
     }
 }

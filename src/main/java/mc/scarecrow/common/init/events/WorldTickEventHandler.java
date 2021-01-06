@@ -1,6 +1,7 @@
 package mc.scarecrow.common.init.events;
 
 import mc.scarecrow.common.block.tile.ScarecrowTile;
+import mc.scarecrow.utils.LogUtils;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
@@ -48,7 +49,7 @@ public class WorldTickEventHandler {
                 });
             }
         } catch (Throwable e) {
-            LOGGER.error(e);
+            LogUtils.printError(LOGGER, e);
         }
     }
 
@@ -60,7 +61,7 @@ public class WorldTickEventHandler {
                     return true;
             }
         } catch (Throwable e) {
-            LOGGER.error(e);
+            LogUtils.printError(LOGGER, e);
             return false;
         }
         return false;

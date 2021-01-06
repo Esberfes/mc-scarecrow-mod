@@ -1,5 +1,6 @@
 package mc.scarecrow.common.capability;
 
+import mc.scarecrow.utils.LogUtils;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.INBT;
 import net.minecraft.nbt.LongArrayNBT;
@@ -44,7 +45,7 @@ public class ScarecrowChunkCapability implements Capability.IStorage<ScarecrowCh
 
             this.chunksBlocks.get(chunk).add(position);
         } catch (Throwable e) {
-            LOGGER.error(e);
+            LogUtils.printError(LOGGER, e);
         }
     }
 
@@ -63,7 +64,7 @@ public class ScarecrowChunkCapability implements Capability.IStorage<ScarecrowCh
             } else
                 this.chunksBlocks.get(chunk).remove(pos);
         } catch (Throwable e) {
-            LOGGER.error(e);
+            LogUtils.printError(LOGGER, e);
         }
     }
 
@@ -100,7 +101,7 @@ public class ScarecrowChunkCapability implements Capability.IStorage<ScarecrowCh
             return compoundChunks;
 
         } catch (Throwable e) {
-            LOGGER.error(e);
+            LogUtils.printError(LOGGER, e);
 
             return null;
         }
@@ -116,7 +117,7 @@ public class ScarecrowChunkCapability implements Capability.IStorage<ScarecrowCh
                 Arrays.stream(blocks.getAsLongArray()).mapToObj(BlockPos::fromLong).forEach(pos -> instance.add(chunk, pos));
             }
         } catch (Throwable e) {
-            LOGGER.error(e);
+            LogUtils.printError(LOGGER, e);
         }
     }
 }
