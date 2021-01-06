@@ -1,17 +1,24 @@
 package mc.scarecrow.common.capability;
 
 import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.INBT;
+import net.minecraft.nbt.LongArrayNBT;
+import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.server.ServerWorld;
+import net.minecraftforge.common.capabilities.Capability;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
-public class ScarecrowChunkCapability implements IScarecrowCapability<ChunkPos, List<BlockPos>, Map<ChunkPos, List<BlockPos>>> {
+public class ScarecrowChunkCapability implements Capability.IStorage<ScarecrowChunkCapability> {
 
-    private final ServerWorld world;
+    private static final Logger LOGGER = LogManager.getLogger();
+
+    private ServerWorld world;
     private final Map<ChunkPos, List<BlockPos>> chunksBlocks;
 
     public ScarecrowChunkCapability(ServerWorld world) {
@@ -19,48 +26,97 @@ public class ScarecrowChunkCapability implements IScarecrowCapability<ChunkPos, 
         this.chunksBlocks = new HashMap<>();
     }
 
-    @Override
-    public synchronized void add(ChunkPos key, List<BlockPos> value) {
-
+    public ScarecrowChunkCapability() {
+        this.chunksBlocks = new HashMap<>();
     }
 
-    @Override
+    public synchronized void add(ChunkPos chunk, BlockPos position) {
+        try {
+            if (this.chunksBlocks.containsKey(chunk) && this.chunksBlocks.get(chunk).contains(position))
+                return;
+
+            if (!this.chunksBlocks.containsKey(chunk)) {
+                this.chunksBlocks.put(chunk, new LinkedList<>());
+                this.world.forceChunk(chunk.x, chunk.z, true);
+            }
+
+            this.world.getTileEntity(position);
+
+            this.chunksBlocks.get(chunk).add(position);
+        } catch (Throwable e) {
+            LOGGER.error(e);
+        }
+    }
+
     public synchronized void remove(ChunkPos key) {
-
+        this.chunksBlocks.remove(key);
     }
 
-    @Override
-    public synchronized void remove(ChunkPos key, List<BlockPos> value) {
+    public synchronized void remove(ChunkPos chunk, BlockPos pos) {
+        try {
+            if (!this.chunksBlocks.containsKey(chunk) || !this.chunksBlocks.get(chunk).contains(pos))
+                return;
 
+            if (this.chunksBlocks.get(chunk).size() == 1) {
+                this.world.forceChunk(chunk.x, chunk.z, false);
+                this.chunksBlocks.remove(chunk);
+            } else
+                this.chunksBlocks.get(chunk).remove(pos);
+        } catch (Throwable e) {
+            LOGGER.error(e);
+        }
     }
 
-    @Override
-    public synchronized List<BlockPos> get(ChunkPos key) {
-        return null;
+    public synchronized List<BlockPos> get(ChunkPos chunk) {
+        return chunksBlocks.get(chunk);
     }
 
-    @Override
     public synchronized Map<ChunkPos, List<BlockPos>> getAll() {
         return new HashMap<>(chunksBlocks);
     }
 
-    @Override
     public synchronized void removeAll() {
-
+        this.chunksBlocks.clear();
     }
 
-    @Override
     public ServerWorld getWorld() {
         return world;
     }
 
     @Override
-    public synchronized CompoundNBT write() {
-        return null;
+    public INBT writeNBT(Capability<ScarecrowChunkCapability> capability, ScarecrowChunkCapability instance, Direction side) {
+        try {
+            CompoundNBT compoundChunks = new CompoundNBT();
+            for (Map.Entry<ChunkPos, List<BlockPos>> entry : instance.chunksBlocks.entrySet()) {
+                CompoundNBT chunkTag = new CompoundNBT();
+                chunkTag.putLong("chunk", entry.getKey().asLong());
+
+                LongArrayNBT blocks = new LongArrayNBT(entry.getValue().stream().map(BlockPos::toLong).collect(Collectors.toList()));
+                chunkTag.put("blocks", blocks);
+
+                compoundChunks.put(entry.getKey().x + ";" + entry.getKey().z, chunkTag);
+            }
+
+            return compoundChunks;
+
+        } catch (Throwable e) {
+            LOGGER.error(e);
+
+            return null;
+        }
     }
 
     @Override
-    public synchronized void read(CompoundNBT compound) {
-
+    public void readNBT(Capability<ScarecrowChunkCapability> capability, ScarecrowChunkCapability instance, Direction side, INBT nbt) {
+        try {
+            for (String key : ((CompoundNBT) nbt).keySet()) {
+                CompoundNBT chunkTag = ((CompoundNBT) nbt).getCompound(key);
+                ChunkPos chunk = new ChunkPos(chunkTag.getLong("chunk"));
+                LongArrayNBT blocks = (LongArrayNBT) chunkTag.get("blocks");
+                Arrays.stream(blocks.getAsLongArray()).mapToObj(BlockPos::fromLong).forEach(pos -> instance.add(chunk, pos));
+            }
+        } catch (Throwable e) {
+            LOGGER.error(e);
+        }
     }
 }

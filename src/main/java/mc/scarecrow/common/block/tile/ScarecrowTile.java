@@ -58,9 +58,9 @@ public class ScarecrowTile extends LockableLootTileEntity implements ITickable {
                 throw new Exception("World is null on create menu");
 
             return new ScarecrowContainer(id, world, getPos(), player, entity);
+
         } catch (Throwable e) {
             LOGGER.error(e);
-
             return null;
         }
     }
@@ -97,10 +97,20 @@ public class ScarecrowTile extends LockableLootTileEntity implements ITickable {
 
     private void onOpenOrClose() {
         Block block = this.getBlockState().getBlock();
-
         if (this.world != null && block instanceof ScarecrowBlock) {
             this.world.addBlockEvent(this.pos, block, 1, this.numPlayersUsing);
             this.world.notifyNeighborsOfStateChange(this.pos, block);
         }
+    }
+
+    // TODO real implementation by fuel status condition
+
+    /**
+     * Called from WorldTick event when checked to keep chunk enabled
+     *
+     * @return this tile is active
+     */
+    public boolean isActive() {
+        return true;
     }
 }

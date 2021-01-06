@@ -1,11 +1,11 @@
 package mc.scarecrow.common.capability;
 
-import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.world.server.ServerWorld;
+import net.minecraftforge.common.capabilities.Capability;
 
 import java.util.Map;
 
-public interface IScarecrowCapability<K, V, T extends Map<K, V>> {
+public interface IScarecrowCapability<C, K, V, T extends Map<K, V>> extends Capability.IStorage<C> {
     void add(K key, V value);
 
     void remove(K key);
@@ -19,8 +19,4 @@ public interface IScarecrowCapability<K, V, T extends Map<K, V>> {
     void removeAll();
 
     ServerWorld getWorld();
-
-    CompoundNBT write();
-
-    void read(CompoundNBT compound);
 }
