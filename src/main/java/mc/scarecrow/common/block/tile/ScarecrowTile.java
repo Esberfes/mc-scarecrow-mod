@@ -85,8 +85,6 @@ public class ScarecrowTile extends LockableLootTileEntity implements ITickableTi
         if (serverTickCounter % 10 == 0) {
             this.fuelManger.onUpdate();
             serverTickCounter = 0;
-            LOGGER.debug("Total fuel: " + this.fuelManger.getTotalBurnTime());
-            LOGGER.debug("Current fuel: " + this.fuelManger.getCurrentBurningTime());
         }
     }
 
