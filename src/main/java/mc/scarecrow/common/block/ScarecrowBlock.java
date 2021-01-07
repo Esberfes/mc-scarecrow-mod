@@ -2,6 +2,7 @@ package mc.scarecrow.common.block;
 
 import mc.scarecrow.common.block.tile.ScarecrowTile;
 import mc.scarecrow.common.capability.ScarecrowCapabilities;
+import mc.scarecrow.common.entity.ScarecrowPlayerEntity;
 import mc.scarecrow.utils.LogUtils;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -37,6 +38,7 @@ public class ScarecrowBlock extends Block {
         super(Properties
                 .create(Material.IRON, MaterialColor.GRAY)
                 .sound(SoundType.STONE)
+                .notSolid()
                 .hardnessAndResistance(1.5f, 6)
                 .harvestLevel(1)
                 .harvestTool(ToolType.PICKAXE));
@@ -61,9 +63,9 @@ public class ScarecrowBlock extends Block {
             } else {
                 throw new IllegalStateException("Our named container provider is missing!");
             }
+            return ActionResultType.CONSUME;
+        } else
             return ActionResultType.SUCCESS;
-        }
-        return super.onBlockActivated(state, worldIn, pos, player, handIn, hit);
     }
 
     @Override
@@ -78,6 +80,8 @@ public class ScarecrowBlock extends Block {
                         ChunkPos chunkPos = serverWorld.getChunk(pos).getPos();
                         tracker.add(chunkPos, pos);
                     });
+
+                    ((ScarecrowTile) tileEntity).setOwner(((ServerPlayerEntity) placer).getGameProfile().getId());
                 }
             }
         } catch (Throwable e) {
@@ -87,31 +91,46 @@ public class ScarecrowBlock extends Block {
 
     @Override
     public void onPlayerDestroy(IWorld worldIn, BlockPos pos, BlockState state) {
-        super.onPlayerDestroy(worldIn, pos, state);
-        onRemovedFromWorld((World) worldIn, pos);
+        if (!worldIn.isRemote()) {
+            super.onPlayerDestroy(worldIn, pos, state);
+            onRemovedFromWorld((World) worldIn, pos);
+        }
     }
 
     @Override
     public void onExplosionDestroy(World worldIn, BlockPos pos, Explosion explosionIn) {
-        super.onExplosionDestroy(worldIn, pos, explosionIn);
-        onRemovedFromWorld(worldIn, pos);
+        if (!worldIn.isRemote()) {
+            super.onExplosionDestroy(worldIn, pos, explosionIn);
+            onRemovedFromWorld(worldIn, pos);
+        }
     }
 
     @Override
     public void onBlockHarvested(World worldIn, BlockPos pos, BlockState state, PlayerEntity player) {
-        super.onBlockHarvested(worldIn, pos, state, player);
-        onRemovedFromWorld(worldIn, pos);
+        if (!worldIn.isRemote()) {
+            super.onBlockHarvested(worldIn, pos, state, player);
+            onRemovedFromWorld(worldIn, pos);
+        }
     }
 
+    /**
+     * Block has been removed from world so we make sure that all data attached is removed too
+     */
     private void onRemovedFromWorld(World worldIn, BlockPos pos) {
         if (!worldIn.isRemote()) {
             if (worldIn.getBlockState(pos).getBlock() instanceof ScarecrowBlock) {
                 ServerWorld serverWorld = (ServerWorld) worldIn;
+
                 // Remove from capabilities
                 worldIn.getCapability(ScarecrowCapabilities.CHUNK_CAPABILITY).ifPresent(tracker -> {
                     ChunkPos chunkPos = serverWorld.getChunk(pos).getPos();
                     tracker.remove(chunkPos, pos);
                 });
+
+                // Remove fake player
+                TileEntity tileEntity = worldIn.getTileEntity(pos);
+                if (tileEntity instanceof ScarecrowTile)
+                    ScarecrowPlayerEntity.remove(((ScarecrowTile) tileEntity).getFakePlayer(), (ServerWorld) worldIn);
             }
         }
     }

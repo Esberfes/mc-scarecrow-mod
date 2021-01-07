@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import mc.scarecrow.common.block.ScarecrowBlock;
 import mc.scarecrow.common.block.container.ScarecrowContainer;
 import mc.scarecrow.common.capability.pojo.ScarecrowTilePojo;
+import mc.scarecrow.common.entity.ScarecrowPlayerEntity;
 import mc.scarecrow.common.init.RegistryHandler;
 import mc.scarecrow.utils.LogUtils;
 import net.minecraft.block.Block;
@@ -25,6 +26,7 @@ import net.minecraft.world.server.ServerWorld;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -35,13 +37,16 @@ public class ScarecrowTile extends LockableLootTileEntity implements ITickableTi
     private static final Logger LOGGER = LogManager.getLogger();
     private static final String NBT_TILE_DATA = "pojo";
 
-    private NonNullList<ItemStack> chestContents;
+    private final NonNullList<ItemStack> chestContents;
     private int numPlayersUsing;
     private final ScarecrowTileFuelManger fuelManger;
 
     private final AtomicInteger serverTickCounter;
     private final AtomicBoolean dataChange;
     private final AtomicBoolean taskInProgress;
+
+    private ScarecrowPlayerEntity fakePlayer;
+    private UUID owner;
 
     public ScarecrowTile() {
         super(RegistryHandler.scarecrowTileBlock.get());
@@ -65,11 +70,9 @@ public class ScarecrowTile extends LockableLootTileEntity implements ITickableTi
     protected void setItems(NonNullList<ItemStack> itemsIn) {
         this.chestContents.clear();
 
-        for (int i = 0; i < itemsIn.size(); i++) {
-            if (i < this.chestContents.size()) {
+        for (int i = 0; i < itemsIn.size(); i++)
+            if (i < this.chestContents.size())
                 this.getItems().set(i, itemsIn.get(i));
-            }
-        }
 
         shouldUpdate();
     }
@@ -112,9 +115,8 @@ public class ScarecrowTile extends LockableLootTileEntity implements ITickableTi
     @Override
     public void openInventory(PlayerEntity player) {
         if (!player.isSpectator()) {
-            if (this.numPlayersUsing < 0) {
+            if (this.numPlayersUsing < 0)
                 this.numPlayersUsing = 0;
-            }
 
             ++this.numPlayersUsing;
             this.onOpenOrClose();
@@ -211,6 +213,9 @@ public class ScarecrowTile extends LockableLootTileEntity implements ITickableTi
         return tag;
     }
 
+    /**
+     * All this code will be executed on server and should be async
+     */
     private void runOnServer(ServerWorld serverWorld) {
         int ticks = serverTickCounter.getAndIncrement();
 
@@ -221,14 +226,25 @@ public class ScarecrowTile extends LockableLootTileEntity implements ITickableTi
 
         serverWorld.getServer().deferTask(() -> {
             try {
-                if (ticks % 10 == 0)
+                if (ticks % 10 == 0) {
                     fuelManger.onUpdate();
 
-                if (ticks % 100 == 0) {
-                    serverTickCounter.set(0);
-                    shouldUpdate();
+                    if (isActive() && fakePlayer == null)
+                        fakePlayer = ScarecrowPlayerEntity.create(serverWorld, getPos(), UUID.randomUUID());
+
+                    if (!isActive() && fakePlayer != null) {
+                        ScarecrowPlayerEntity.remove(fakePlayer, (ServerWorld) world);
+                        fakePlayer = null;
+                    }
                 }
 
+                if (ticks % 100 == 0)
+                    shouldUpdate();
+
+                if (ticks % 1000 == 0) {
+                    LOGGER.debug("OWNER: " + (owner != null ? owner.toString() : "NO OWNER"));
+                    serverTickCounter.set(1);
+                }
             } catch (Throwable e) {
                 LogUtils.printError(LOGGER, e);
             } finally {
@@ -247,20 +263,31 @@ public class ScarecrowTile extends LockableLootTileEntity implements ITickableTi
         return this.fuelManger.active();
     }
 
+    /**
+     * Deserialize data to sync
+     */
     public void fromPojo(ScarecrowTilePojo pojo) {
         this.fuelManger.setCurrentBurningTime(pojo.getCurrentBurningTime());
         this.fuelManger.setInPause(pojo.isInPause());
+        this.owner = pojo.getUuid();
     }
 
+    /**
+     * Serialize data to sync
+     */
     public ScarecrowTilePojo toPojo() {
         ScarecrowTilePojo result = new ScarecrowTilePojo();
 
         result.setCurrentBurningTime(this.fuelManger.getCurrentBurningTime());
         result.setInPause(this.fuelManger.isInPause());
+        result.setUuid(owner);
 
         return result;
     }
 
+    /**
+     * Update and sync entity
+     */
     public void shouldUpdate() {
         if (this.world == null || this.world.isRemote)
             return;
@@ -269,5 +296,17 @@ public class ScarecrowTile extends LockableLootTileEntity implements ITickableTi
         this.world.notifyBlockUpdate(this.pos, this.getBlockState(), this.getBlockState(), 2);
 
         this.dataChange.set(true);
+    }
+
+    public UUID getOwner() {
+        return owner;
+    }
+
+    public void setOwner(UUID owner) {
+        this.owner = owner;
+    }
+
+    public ScarecrowPlayerEntity getFakePlayer() {
+        return fakePlayer;
     }
 }
