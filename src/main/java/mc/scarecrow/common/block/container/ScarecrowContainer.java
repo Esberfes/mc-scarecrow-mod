@@ -16,7 +16,8 @@ import net.minecraftforge.items.SlotItemHandler;
 import net.minecraftforge.items.wrapper.InvWrapper;
 
 import static mc.scarecrow.common.init.events.ContainersRegisterEventHandler.CONTAINER_TYPE;
-import static mc.scarecrow.constant.ScarecrowBlockConstants.*;
+import static mc.scarecrow.constant.ScarecrowBlockConstants.INVENTORY_SIZE;
+import static mc.scarecrow.constant.ScarecrowScreenConstants.*;
 
 public class ScarecrowContainer extends Container {
     private final World world;
@@ -32,28 +33,35 @@ public class ScarecrowContainer extends Container {
         assert scarecrowTile != null;
         ((IInventory) scarecrowTile).openInventory(playerInventory.player);
 
-        InitInventory();
+        AssignSlotsToInventoryWindow();
     }
 
-    private void InitInventory() {
-        this.addSlot(new ScarecrowContainerItemSlot(scarecrowTile, 0, 12 + 4 * 18, 8 + 2 * 18));
+    private void AssignSlotsToInventoryWindow() {
+        // Input slot
+        this.addSlot(new ScarecrowContainerItemSlot(scarecrowTile,
+                0,
+                X_OFFSET_GRID + SLOT_BORDER_SIZE + (4 * SLOT_SIZE),
+                Y_OFFSET_INPUT_SLOT + SLOT_BORDER_SIZE));
 
-        int leftCol = (SCREEN_SIZE_X - 162) / 2 + 1;
-
-        for (int playerInvRow = 0; playerInvRow < 3; playerInvRow++) {
-            for (int playerInvCol = 0; playerInvCol < 9; playerInvCol++) {
+        // Inventory slots
+        int leftCol = X_OFFSET_GRID;
+        for (int playerInvRow = 0; playerInvRow < NUMBER_ROWS; playerInvRow++) {
+            for (int playerInvCol = 0; playerInvCol < NUMBER_COLUMNS; playerInvCol++) {
                 this.addSlot(new SlotItemHandler(
                         this.playerInventory,
-                        playerInvCol + playerInvRow * 9 + 9,
-                        leftCol + playerInvCol * 18,
-                        SCREEN_SIZE_Y - (4 - playerInvRow) * 18 - 10)
+                        playerInvCol + NUMBER_COLUMNS + (playerInvRow * 9),
+                        leftCol + SLOT_BORDER_SIZE + (playerInvCol * SLOT_SIZE),
+                        Y_OFFSET_GRID + 1)
                 );
             }
         }
-        for (int hotBarSlot = 0; hotBarSlot < 9; hotBarSlot++) {
+
+        // Hotbar slots
+        for (int hotBarSlot = 0; hotBarSlot < NUMBER_COLUMNS; hotBarSlot++) {
             this.addSlot(new SlotItemHandler(this.playerInventory,
                     hotBarSlot,
-                    leftCol + hotBarSlot * 18, SCREEN_SIZE_Y - 24)
+                    leftCol + SLOT_BORDER_SIZE + (hotBarSlot * SLOT_SIZE),
+                    INVENTORY_SCREEN_SIZE_Y - 24)
             );
         }
     }
@@ -78,7 +86,6 @@ public class ScarecrowContainer extends Container {
                 slot.putStack(ItemStack.EMPTY);
             else
                 slot.onSlotChanged();
-
         }
 
         return itemStack;

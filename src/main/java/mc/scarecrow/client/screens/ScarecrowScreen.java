@@ -12,8 +12,8 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
-import static mc.scarecrow.constant.ScarecrowBlockConstants.*;
 import static mc.scarecrow.constant.ScarecrowModConstants.MOD_IDENTIFIER;
+import static mc.scarecrow.constant.ScarecrowScreenConstants.*;
 
 @OnlyIn(Dist.CLIENT)
 public class ScarecrowScreen extends ContainerScreen<ScarecrowContainer> implements IHasContainer<ScarecrowContainer> {
@@ -24,10 +24,10 @@ public class ScarecrowScreen extends ContainerScreen<ScarecrowContainer> impleme
 
     public ScarecrowScreen(ScarecrowContainer screenContainer, PlayerInventory inv, ITextComponent titleIn) {
         super(screenContainer, inv, titleIn);
-        this.xSize = SCREEN_SIZE_X;
-        this.ySize = SCREEN_SIZE_Y;
-        this.textureXSize = SCREEN_TEXTURE_SIZE_X;
-        this.textureYSize = SCREEN_TEXTURE_SIZE_Y;
+        this.xSize = INVENTORY_SCREEN_SIZE_X;
+        this.ySize = INVENTORY_SCREEN_SIZE_Y;
+        this.textureXSize = SPRITE_TEXTURE_SIZE_X;
+        this.textureYSize = SPRITE_TEXTURE_SIZE_Y;
         this.passEvents = false;
     }
 
