@@ -5,6 +5,7 @@ import java.util.UUID;
 public class ScarecrowTilePojo {
 
     private int currentBurningTime;
+    private int totalBurnTime;
     private boolean inPause;
     private UUID uuid;
 
@@ -30,5 +31,13 @@ public class ScarecrowTilePojo {
 
     public void setUuid(UUID uuid) {
         this.uuid = uuid;
+    }
+
+    public int getTotalBurnTime() {
+        return totalBurnTime;
+    }
+
+    public void setTotalBurnTime(int totalBurnTime) {
+        this.totalBurnTime = totalBurnTime;
     }
 }

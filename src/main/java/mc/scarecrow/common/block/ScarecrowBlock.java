@@ -5,6 +5,7 @@ import mc.scarecrow.common.capability.ScarecrowCapabilities;
 import mc.scarecrow.common.entity.ScarecrowPlayerEntity;
 import mc.scarecrow.utils.LogUtils;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
@@ -13,9 +14,14 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.container.INamedContainerProvider;
+import net.minecraft.item.BlockItemUseContext;
 import net.minecraft.item.ItemStack;
+import net.minecraft.state.DirectionProperty;
+import net.minecraft.state.StateContainer;
+import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ActionResultType;
+import net.minecraft.util.Direction;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
@@ -33,6 +39,7 @@ import org.apache.logging.log4j.Logger;
 public class ScarecrowBlock extends Block {
 
     private static final Logger LOGGER = LogManager.getLogger();
+    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
     public ScarecrowBlock() {
         super(Properties
@@ -42,6 +49,20 @@ public class ScarecrowBlock extends Block {
                 .hardnessAndResistance(1.5f, 6)
                 .harvestLevel(1)
                 .harvestTool(ToolType.PICKAXE));
+
+        setDefaultState(getStateContainer().getBaseState()
+                .with(FACING, Direction.NORTH)
+        );
+    }
+
+    @Override
+    protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
+        builder.add(FACING);
+    }
+
+    @Override
+    public BlockRenderType getRenderType(BlockState state) {
+        return BlockRenderType.ENTITYBLOCK_ANIMATED;
     }
 
     @Override
@@ -52,6 +73,12 @@ public class ScarecrowBlock extends Block {
     @Override
     public boolean hasTileEntity(BlockState state) {
         return true;
+    }
+
+    @Override
+    public BlockState getStateForPlacement(BlockItemUseContext placement) {
+        return getDefaultState()
+                .with(FACING, placement.getPlacementHorizontalFacing());
     }
 
     @Override

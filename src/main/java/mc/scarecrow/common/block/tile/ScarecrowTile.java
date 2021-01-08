@@ -7,8 +7,12 @@ import mc.scarecrow.common.capability.pojo.ScarecrowTilePojo;
 import mc.scarecrow.common.entity.ScarecrowPlayerEntity;
 import mc.scarecrow.common.init.RegistryHandler;
 import mc.scarecrow.utils.LogUtils;
+import mcp.mobius.waila.api.IComponentProvider;
+import mcp.mobius.waila.api.IDataAccessor;
+import mcp.mobius.waila.api.IPluginConfig;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.ItemStackHelper;
@@ -26,13 +30,15 @@ import net.minecraft.world.server.ServerWorld;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static mc.scarecrow.constant.ScarecrowModConstants.INVENTORY_SIZE;
+import static mc.scarecrow.utils.UIUtils.ticksToTime;
 
-public class ScarecrowTile extends LockableLootTileEntity implements ITickableTileEntity {
+public class ScarecrowTile extends LockableLootTileEntity implements ITickableTileEntity, IComponentProvider {
 
     private static final Logger LOGGER = LogManager.getLogger();
     private static final String NBT_TILE_DATA = "pojo";
@@ -147,14 +153,14 @@ public class ScarecrowTile extends LockableLootTileEntity implements ITickableTi
     }
 
     @Override
-    public CompoundNBT getUpdateTag() {
-        return writeTag(super.getUpdateTag());
-    }
-
-    @Override
     public void read(BlockState state, CompoundNBT nbt) {
         super.read(state, nbt);
         readTag(nbt);
+    }
+
+    @Override
+    public CompoundNBT getUpdateTag() {
+        return writeTag(super.getUpdateTag());
     }
 
     @Override
@@ -236,18 +242,16 @@ public class ScarecrowTile extends LockableLootTileEntity implements ITickableTi
                         ScarecrowPlayerEntity.remove(fakePlayer, (ServerWorld) world);
                         fakePlayer = null;
                     }
-                }
 
-                if (ticks % 100 == 0)
                     shouldUpdate();
-
-                if (ticks % 1000 == 0) {
-                    LOGGER.debug("OWNER: " + (owner != null ? owner.toString() : "NO OWNER"));
-                    serverTickCounter.set(1);
                 }
             } catch (Throwable e) {
                 LogUtils.printError(LOGGER, e);
             } finally {
+                // Make sure counter not overflow
+                if (ticks % 1000 == 0)
+                    serverTickCounter.set(1);
+
                 // Release flag for next update
                 taskInProgress.set(false);
             }
@@ -263,12 +267,21 @@ public class ScarecrowTile extends LockableLootTileEntity implements ITickableTi
         return this.fuelManger.active();
     }
 
+    public boolean isPaused() {
+        return this.fuelManger.isInPause();
+    }
+
+    public int getTotalFuel() {
+        return this.fuelManger.getTotalBurnTime();
+    }
+
     /**
      * Deserialize data to sync
      */
     public void fromPojo(ScarecrowTilePojo pojo) {
         this.fuelManger.setCurrentBurningTime(pojo.getCurrentBurningTime());
         this.fuelManger.setInPause(pojo.isInPause());
+        this.fuelManger.setTotalBurnTime(pojo.getTotalBurnTime());
         this.owner = pojo.getUuid();
     }
 
@@ -279,6 +292,7 @@ public class ScarecrowTile extends LockableLootTileEntity implements ITickableTi
         ScarecrowTilePojo result = new ScarecrowTilePojo();
 
         result.setCurrentBurningTime(this.fuelManger.getCurrentBurningTime());
+        result.setTotalBurnTime(this.fuelManger.getTotalBurnTime());
         result.setInPause(this.fuelManger.isInPause());
         result.setUuid(owner);
 
@@ -308,5 +322,23 @@ public class ScarecrowTile extends LockableLootTileEntity implements ITickableTi
 
     public ScarecrowPlayerEntity getFakePlayer() {
         return fakePlayer;
+    }
+
+    @Override
+    public void appendTail(List<ITextComponent> info, IDataAccessor accessor, IPluginConfig config) {
+        if (accessor.getTileEntity() instanceof ScarecrowTile) {
+            ScarecrowTile tile = (ScarecrowTile) accessor.getTileEntity();
+            info.add(new StringTextComponent("Active: " + (tile.isActive() ? "yes" : "no")));
+            info.add(new StringTextComponent("Pause: " + (tile.isPaused() ? "yes" : "no")));
+            info.add(new StringTextComponent("Fuel: " + ticksToTime(tile.getTotalFuel())));
+            ClientPlayerEntity player;
+            if (tile.getOwner() != null && accessor.getWorld() != null && (player = (ClientPlayerEntity) accessor.getWorld().getPlayerByUuid(tile.getOwner())) != null)
+                info.add(new StringTextComponent("Owner: " + player.getGameProfile().getName()));
+        }
+    }
+
+    @Override
+    public ItemStack getStack(IDataAccessor accessor, IPluginConfig config) {
+        return ((ScarecrowTile) accessor.getTileEntity()).chestContents.get(0);
     }
 }

@@ -2,6 +2,8 @@ package mc.scarecrow.common.block.tile;
 
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.NonNullList;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeHooks;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -70,6 +72,11 @@ public class ScarecrowTileFuelManger {
 
     public synchronized int getTotalBurnTime() {
         return totalBurnTime.get();
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public synchronized void setTotalBurnTime(int value) {
+        totalBurnTime.set(value);
     }
 
     public synchronized int getCurrentBurningTime() {
