@@ -1,11 +1,14 @@
 package mc.scarecrow.common.network;
 
+import mc.scarecrow.client.renderer.ScarecrowTileRenderer;
 import mc.scarecrow.client.screens.ScarecrowScreen;
+import mc.scarecrow.common.init.RegistryHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.gui.ScreenManager;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.world.World;
+import net.minecraftforge.fml.client.registry.ClientRegistry;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
@@ -18,6 +21,9 @@ public class ClientProxy implements IProxy {
     public void init() {
         // Register on client the screen for the container
         ScreenManager.registerFactory(CONTAINER_TYPE, ScarecrowScreen::new);
+        // Register on client the scarecrow tile renderer
+        ClientRegistry.bindTileEntityRenderer(RegistryHandler.scarecrowTileBlock.get(),
+                o -> new ScarecrowTileRenderer(o, RegistryHandler.scarecrowBlock.get()));
     }
 
     @Override
