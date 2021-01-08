@@ -54,6 +54,8 @@ public class ScarecrowTile extends LockableLootTileEntity implements ITickableTi
     private ScarecrowPlayerEntity fakePlayer;
     private UUID owner;
 
+    private double lastYaw = 0D;
+
     public ScarecrowTile() {
         super(RegistryHandler.scarecrowTileBlock.get());
         numPlayersUsing = 0;
@@ -340,5 +342,13 @@ public class ScarecrowTile extends LockableLootTileEntity implements ITickableTi
     @Override
     public ItemStack getStack(IDataAccessor accessor, IPluginConfig config) {
         return ((ScarecrowTile) accessor.getTileEntity()).chestContents.get(0);
+    }
+
+    public double getLastYaw() {
+        return lastYaw;
+    }
+
+    public void setLastYaw(double lastYaw) {
+        this.lastYaw = lastYaw;
     }
 }

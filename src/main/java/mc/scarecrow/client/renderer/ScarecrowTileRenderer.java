@@ -33,7 +33,6 @@ public class ScarecrowTileRenderer extends TileEntityRenderer<ScarecrowTile> {
     private static final Logger LOGGER = LogManager.getLogger();
     private static final int DELTA_ANGLE = 5;
     private final Block block;
-    private double lastYaw = 0D;
 
     public ScarecrowTileRenderer(TileEntityRendererDispatcher rendererDispatcherIn, Block block) {
         super(rendererDispatcherIn);
@@ -61,13 +60,13 @@ public class ScarecrowTileRenderer extends TileEntityRenderer<ScarecrowTile> {
 
                 double targetYaw = lookAt(tilePositionVec, target);
 
-                lastYaw = calcAngle(tileFacingDirection, targetYaw, lastYaw, DELTA_ANGLE);
+                tile.setLastYaw(calcAngle(tileFacingDirection, targetYaw, tile.getLastYaw(), DELTA_ANGLE));
 
             } else {
-                lastYaw = calcAngle(tileFacingDirection, 0F, lastYaw, DELTA_ANGLE);
+                tile.setLastYaw(calcAngle(tileFacingDirection, tileFacingDirection.getHorizontalAngle(), tile.getLastYaw(), DELTA_ANGLE));
             }
 
-            matrixStack.rotate(new Quaternion(0, (float) lastYaw, 0, true));
+            matrixStack.rotate(new Quaternion(0, (float) tile.getLastYaw(), 0, true));
 
         } catch (Throwable e) {
             LogUtils.printError(LOGGER, e);
