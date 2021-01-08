@@ -2,8 +2,10 @@ package mc.scarecrow.common.block;
 
 import mc.scarecrow.common.block.tile.ScarecrowTile;
 import mc.scarecrow.common.capability.ScarecrowCapabilities;
+import mc.scarecrow.common.entity.ScarecrowPlayerEntity;
 import mc.scarecrow.utils.LogUtils;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
@@ -12,9 +14,14 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.container.INamedContainerProvider;
+import net.minecraft.item.BlockItemUseContext;
 import net.minecraft.item.ItemStack;
+import net.minecraft.state.DirectionProperty;
+import net.minecraft.state.StateContainer;
+import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ActionResultType;
+import net.minecraft.util.Direction;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
@@ -32,14 +39,30 @@ import org.apache.logging.log4j.Logger;
 public class ScarecrowBlock extends Block {
 
     private static final Logger LOGGER = LogManager.getLogger();
+    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
     public ScarecrowBlock() {
         super(Properties
                 .create(Material.IRON, MaterialColor.GRAY)
                 .sound(SoundType.STONE)
+                .notSolid()
                 .hardnessAndResistance(1.5f, 6)
                 .harvestLevel(1)
                 .harvestTool(ToolType.PICKAXE));
+
+        setDefaultState(getStateContainer().getBaseState()
+                .with(FACING, Direction.NORTH)
+        );
+    }
+
+    @Override
+    protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
+        builder.add(FACING);
+    }
+
+    @Override
+    public BlockRenderType getRenderType(BlockState state) {
+        return BlockRenderType.ENTITYBLOCK_ANIMATED;
     }
 
     @Override
@@ -53,6 +76,12 @@ public class ScarecrowBlock extends Block {
     }
 
     @Override
+    public BlockState getStateForPlacement(BlockItemUseContext placement) {
+        return getDefaultState()
+                .with(FACING, placement.getPlacementHorizontalFacing());
+    }
+
+    @Override
     public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
         if (!worldIn.isRemote) {
             TileEntity tileEntity = worldIn.getTileEntity(pos);
@@ -61,9 +90,9 @@ public class ScarecrowBlock extends Block {
             } else {
                 throw new IllegalStateException("Our named container provider is missing!");
             }
+            return ActionResultType.CONSUME;
+        } else
             return ActionResultType.SUCCESS;
-        }
-        return super.onBlockActivated(state, worldIn, pos, player, handIn, hit);
     }
 
     @Override
@@ -78,6 +107,8 @@ public class ScarecrowBlock extends Block {
                         ChunkPos chunkPos = serverWorld.getChunk(pos).getPos();
                         tracker.add(chunkPos, pos);
                     });
+
+                    ((ScarecrowTile) tileEntity).setOwner(((ServerPlayerEntity) placer).getGameProfile().getId());
                 }
             }
         } catch (Throwable e) {
@@ -87,31 +118,46 @@ public class ScarecrowBlock extends Block {
 
     @Override
     public void onPlayerDestroy(IWorld worldIn, BlockPos pos, BlockState state) {
-        super.onPlayerDestroy(worldIn, pos, state);
-        onRemovedFromWorld((World) worldIn, pos);
+        if (!worldIn.isRemote()) {
+            super.onPlayerDestroy(worldIn, pos, state);
+            onRemovedFromWorld((World) worldIn, pos);
+        }
     }
 
     @Override
     public void onExplosionDestroy(World worldIn, BlockPos pos, Explosion explosionIn) {
-        super.onExplosionDestroy(worldIn, pos, explosionIn);
-        onRemovedFromWorld(worldIn, pos);
+        if (!worldIn.isRemote()) {
+            super.onExplosionDestroy(worldIn, pos, explosionIn);
+            onRemovedFromWorld(worldIn, pos);
+        }
     }
 
     @Override
     public void onBlockHarvested(World worldIn, BlockPos pos, BlockState state, PlayerEntity player) {
-        super.onBlockHarvested(worldIn, pos, state, player);
-        onRemovedFromWorld(worldIn, pos);
+        if (!worldIn.isRemote()) {
+            super.onBlockHarvested(worldIn, pos, state, player);
+            onRemovedFromWorld(worldIn, pos);
+        }
     }
 
+    /**
+     * Block has been removed from world so we make sure that all data attached is removed too
+     */
     private void onRemovedFromWorld(World worldIn, BlockPos pos) {
         if (!worldIn.isRemote()) {
             if (worldIn.getBlockState(pos).getBlock() instanceof ScarecrowBlock) {
                 ServerWorld serverWorld = (ServerWorld) worldIn;
+
                 // Remove from capabilities
                 worldIn.getCapability(ScarecrowCapabilities.CHUNK_CAPABILITY).ifPresent(tracker -> {
                     ChunkPos chunkPos = serverWorld.getChunk(pos).getPos();
                     tracker.remove(chunkPos, pos);
                 });
+
+                // Remove fake player
+                TileEntity tileEntity = worldIn.getTileEntity(pos);
+                if (tileEntity instanceof ScarecrowTile)
+                    ScarecrowPlayerEntity.remove(((ScarecrowTile) tileEntity).getFakePlayer(), (ServerWorld) worldIn);
             }
         }
     }

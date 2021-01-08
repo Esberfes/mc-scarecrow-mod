@@ -1,6 +1,7 @@
 package mc.scarecrow.common.init.events;
 
 import mc.scarecrow.common.block.tile.ScarecrowTile;
+import mc.scarecrow.common.entity.ScarecrowPlayerEntity;
 import mc.scarecrow.utils.LogUtils;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
@@ -9,6 +10,7 @@ import net.minecraft.world.GameRules;
 import net.minecraft.world.server.ServerChunkProvider;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.apache.logging.log4j.LogManager;
@@ -21,7 +23,7 @@ import static mc.scarecrow.common.capability.ScarecrowCapabilities.CHUNK_CAPABIL
 import static mc.scarecrow.constant.ScarecrowModConstants.MOD_IDENTIFIER;
 
 @Mod.EventBusSubscriber(modid = MOD_IDENTIFIER, bus = Mod.EventBusSubscriber.Bus.FORGE)
-public class WorldTickEventHandler {
+public class WorldEventHandler {
 
     private static final Logger LOGGER = LogManager.getLogger();
 
@@ -65,5 +67,12 @@ public class WorldTickEventHandler {
             return false;
         }
         return false;
+    }
+
+    @SubscribeEvent
+    public static void onWorldUnload(WorldEvent.Unload event) {
+        if (event.getWorld() instanceof ServerWorld) {
+            ScarecrowPlayerEntity.removeAll((ServerWorld) event.getWorld());
+        }
     }
 }

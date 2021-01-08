@@ -33,10 +33,10 @@ public class ScarecrowContainer extends Container {
         assert scarecrowTile != null;
         ((IInventory) scarecrowTile).openInventory(playerInventory.player);
 
-        AssignSlotsToInventoryWindow();
+        assignSlotsToInventoryWindow();
     }
 
-    private void AssignSlotsToInventoryWindow() {
+    private void assignSlotsToInventoryWindow() {
         // Input slot
         this.addSlot(new ScarecrowContainerItemSlot(scarecrowTile,
                 0,
