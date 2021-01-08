@@ -52,6 +52,13 @@ ordering = "NONE"
 side = "BOTH"
 # Here's another dependency
 
+[[dependencies.scarecrow]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[1.16.3]"
+ordering = "NONE"
+side = "BOTH"
+
 #[[dependencies.scarecrow]]
 #   modId="hwyla"
 #  versionRange="[1.16.3]"

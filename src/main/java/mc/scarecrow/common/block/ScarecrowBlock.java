@@ -3,6 +3,7 @@ package mc.scarecrow.common.block;
 import mc.scarecrow.common.block.tile.ScarecrowTile;
 import mc.scarecrow.common.capability.ScarecrowCapabilities;
 import mc.scarecrow.common.entity.ScarecrowPlayerEntity;
+import mc.scarecrow.common.init.RegistryHandler;
 import mc.scarecrow.utils.LogUtils;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockRenderType;
@@ -13,9 +14,13 @@ import net.minecraft.block.material.MaterialColor;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.inventory.IInventory;
+import net.minecraft.inventory.InventoryHelper;
+import net.minecraft.inventory.container.Container;
 import net.minecraft.inventory.container.INamedContainerProvider;
 import net.minecraft.item.BlockItemUseContext;
 import net.minecraft.item.ItemStack;
+import net.minecraft.loot.LootContext;
 import net.minecraft.state.DirectionProperty;
 import net.minecraft.state.StateContainer;
 import net.minecraft.state.properties.BlockStateProperties;
@@ -26,15 +31,16 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.Explosion;
 import net.minecraft.world.IBlockReader;
-import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.ToolType;
 import net.minecraftforge.fml.network.NetworkHooks;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.Collections;
+import java.util.List;
 
 public class ScarecrowBlock extends Block {
 
@@ -56,6 +62,14 @@ public class ScarecrowBlock extends Block {
     }
 
     @Override
+    public List<ItemStack> getDrops(BlockState state, LootContext.Builder builder) {
+        List<ItemStack> dropsOriginal = super.getDrops(state, builder);
+        if (!dropsOriginal.isEmpty())
+            return dropsOriginal;
+        return Collections.singletonList(new ItemStack(RegistryHandler.scarecrowBlockItem.get(), 1));
+    }
+
+    @Override
     protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
         builder.add(FACING);
     }
@@ -67,7 +81,7 @@ public class ScarecrowBlock extends Block {
 
     @Override
     public TileEntity createTileEntity(BlockState state, IBlockReader world) {
-        return hasTileEntity(state) ? new ScarecrowTile() : null;
+        return new ScarecrowTile();
     }
 
     @Override
@@ -83,16 +97,19 @@ public class ScarecrowBlock extends Block {
 
     @Override
     public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
-        if (!worldIn.isRemote) {
-            TileEntity tileEntity = worldIn.getTileEntity(pos);
-            if (tileEntity instanceof INamedContainerProvider) {
-                NetworkHooks.openGui((ServerPlayerEntity) player, (INamedContainerProvider) tileEntity, tileEntity.getPos());
-            } else {
-                throw new IllegalStateException("Our named container provider is missing!");
+        try {
+            if (!worldIn.isRemote()) {
+                TileEntity tileEntity = worldIn.getTileEntity(pos);
+                if (tileEntity instanceof INamedContainerProvider)
+                    NetworkHooks.openGui((ServerPlayerEntity) player, (INamedContainerProvider) tileEntity, tileEntity.getPos());
+                else
+                    throw new IllegalStateException("Our named container provider is missing!");
             }
-            return ActionResultType.CONSUME;
-        } else
-            return ActionResultType.SUCCESS;
+        } catch (Throwable e) {
+            LogUtils.printError(LOGGER, e);
+        }
+
+        return ActionResultType.func_233537_a_(worldIn.isRemote());
     }
 
     @Override
@@ -117,48 +134,57 @@ public class ScarecrowBlock extends Block {
     }
 
     @Override
-    public void onPlayerDestroy(IWorld worldIn, BlockPos pos, BlockState state) {
-        if (!worldIn.isRemote()) {
-            super.onPlayerDestroy(worldIn, pos, state);
-            onRemovedFromWorld((World) worldIn, pos);
+    public boolean isReplaceable(BlockState state, BlockItemUseContext useContext) {
+        return true;
+    }
+
+    @Override
+    public void onReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean isMoving) {
+        if (state.getBlock() != newState.getBlock()) {
+            TileEntity tileentity = world.getTileEntity(pos);
+            if (tileentity instanceof ScarecrowTile) {
+                InventoryHelper.dropInventoryItems(world, pos, (ScarecrowTile) tileentity);
+                world.updateComparatorOutputLevel(pos, this);
+            }
+            onRemovedFromWorld(world, pos);
+            super.onReplaced(state, world, pos, newState, isMoving);
         }
     }
 
     @Override
-    public void onExplosionDestroy(World worldIn, BlockPos pos, Explosion explosionIn) {
-        if (!worldIn.isRemote()) {
-            super.onExplosionDestroy(worldIn, pos, explosionIn);
-            onRemovedFromWorld(worldIn, pos);
-        }
+    public int getComparatorInputOverride(BlockState blockState, World worldIn, BlockPos pos) {
+        return Container.calcRedstoneFromInventory((IInventory) worldIn.getTileEntity(pos));
     }
 
     @Override
-    public void onBlockHarvested(World worldIn, BlockPos pos, BlockState state, PlayerEntity player) {
-        if (!worldIn.isRemote()) {
-            super.onBlockHarvested(worldIn, pos, state, player);
-            onRemovedFromWorld(worldIn, pos);
-        }
+    public boolean hasComparatorInputOverride(BlockState state) {
+        return true;
     }
 
     /**
      * Block has been removed from world so we make sure that all data attached is removed too
      */
     private void onRemovedFromWorld(World worldIn, BlockPos pos) {
-        if (!worldIn.isRemote()) {
-            if (worldIn.getBlockState(pos).getBlock() instanceof ScarecrowBlock) {
-                ServerWorld serverWorld = (ServerWorld) worldIn;
+        try {
+            if (!worldIn.isRemote()) {
+                if (worldIn.getBlockState(pos).getBlock() instanceof ScarecrowBlock) {
+                    ServerWorld serverWorld = (ServerWorld) worldIn;
 
-                // Remove from capabilities
-                worldIn.getCapability(ScarecrowCapabilities.CHUNK_CAPABILITY).ifPresent(tracker -> {
-                    ChunkPos chunkPos = serverWorld.getChunk(pos).getPos();
-                    tracker.remove(chunkPos, pos);
-                });
+                    // Remove from capabilities
+                    worldIn.getCapability(ScarecrowCapabilities.CHUNK_CAPABILITY).ifPresent(tracker -> {
+                        ChunkPos chunkPos = serverWorld.getChunk(pos).getPos();
+                        tracker.remove(chunkPos, pos);
+                    });
 
-                // Remove fake player
-                TileEntity tileEntity = worldIn.getTileEntity(pos);
-                if (tileEntity instanceof ScarecrowTile)
-                    ScarecrowPlayerEntity.remove(((ScarecrowTile) tileEntity).getFakePlayer(), (ServerWorld) worldIn);
+                    TileEntity tileEntity = worldIn.getTileEntity(pos);
+                    if (tileEntity instanceof ScarecrowTile) {
+                        // Remove fake players
+                        ScarecrowPlayerEntity.remove(((ScarecrowTile) tileEntity).getFakePlayer(), (ServerWorld) worldIn);
+                    }
+                }
             }
+        } catch (Throwable e) {
+            LogUtils.printError(LOGGER, e);
         }
     }
 }
