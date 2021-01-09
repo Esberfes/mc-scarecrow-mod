@@ -2,8 +2,6 @@ package mc.scarecrow.common.block.tile;
 
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.NonNullList;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeHooks;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -23,7 +21,7 @@ public class ScarecrowTileFuelManger {
     private final AtomicInteger currentBurningTime;
     private final AtomicInteger totalItemBurnTime;
 
-    private long lastUpdate;
+    private Long lastUpdate;
     private final AtomicBoolean inPause;
 
     public ScarecrowTileFuelManger(Supplier<NonNullList<ItemStack>> supplier) {
@@ -37,6 +35,10 @@ public class ScarecrowTileFuelManger {
 
     public synchronized void onUpdate() {
         long now = System.currentTimeMillis();
+
+        if (lastUpdate == null)
+            lastUpdate = now;
+
         long timeSinceLastUpdate = now - lastUpdate;
         long ticks = (long) (timeSinceLastUpdate / TICK_TIME_RELATION);
         NonNullList<ItemStack> inventory = supplier.get();
@@ -77,7 +79,6 @@ public class ScarecrowTileFuelManger {
         return totalBurnTime.get();
     }
 
-    @OnlyIn(Dist.CLIENT)
     public synchronized void setTotalBurnTime(int value) {
         totalBurnTime.set(value);
     }
