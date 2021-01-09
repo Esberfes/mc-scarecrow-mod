@@ -45,7 +45,7 @@ public class ScarecrowTile extends LockableLootTileEntity implements ITickableTi
 
     private final NonNullList<ItemStack> chestContents;
     private int numPlayersUsing;
-    private final ScarecrowTileFuelManger fuelManger;
+    private final ScarecrowTileFuelManger fuelManager;
 
     private final AtomicInteger serverTickCounter;
     private final AtomicBoolean dataChange;
@@ -61,7 +61,7 @@ public class ScarecrowTile extends LockableLootTileEntity implements ITickableTi
         numPlayersUsing = 0;
         chestContents = NonNullList.withSize(INVENTORY_SIZE, ItemStack.EMPTY);
 
-        fuelManger = new ScarecrowTileFuelManger(this::getItems);
+        fuelManager = new ScarecrowTileFuelManger(this::getItems);
 
         serverTickCounter = new AtomicInteger();
         dataChange = new AtomicBoolean();
@@ -235,7 +235,7 @@ public class ScarecrowTile extends LockableLootTileEntity implements ITickableTi
         serverWorld.getServer().deferTask(() -> {
             try {
                 if (ticks % 10 == 0) {
-                    fuelManger.onUpdate();
+                    fuelManager.onUpdate();
 
                     if (isActive() && fakePlayer == null)
                         fakePlayer = ScarecrowPlayerEntity.create(serverWorld, getPos(), UUID.randomUUID());
@@ -266,24 +266,33 @@ public class ScarecrowTile extends LockableLootTileEntity implements ITickableTi
      * @return this tile is active
      */
     public boolean isActive() {
-        return this.fuelManger.active();
+        return this.fuelManager.active();
     }
 
     public boolean isPaused() {
-        return this.fuelManger.isInPause();
+        return this.fuelManager.isInPause();
     }
 
     public int getTotalFuel() {
-        return this.fuelManger.getTotalBurnTime();
+        return this.fuelManager.getTotalBurnTime();
+    }
+
+    public int getTotalItemBurnTime() {
+        return this.fuelManager.getTotalItemBurnTime();
+    }
+
+    public int getCurrentBurnTime() {
+        return this.fuelManager.getCurrentBurningTime();
     }
 
     /**
      * Deserialize data to sync
      */
     public void fromPojo(ScarecrowTilePojo pojo) {
-        this.fuelManger.setCurrentBurningTime(pojo.getCurrentBurningTime());
-        this.fuelManger.setInPause(pojo.isInPause());
-        this.fuelManger.setTotalBurnTime(pojo.getTotalBurnTime());
+        this.fuelManager.setCurrentBurningTime(pojo.getCurrentBurningTime());
+        this.fuelManager.setInPause(pojo.isInPause());
+        this.fuelManager.setTotalBurnTime(pojo.getTotalBurnTime());
+        this.fuelManager.setTotalItemBurnTime(pojo.getTotalItemBurnTime());
         this.owner = pojo.getUuid();
     }
 
@@ -293,9 +302,10 @@ public class ScarecrowTile extends LockableLootTileEntity implements ITickableTi
     public ScarecrowTilePojo toPojo() {
         ScarecrowTilePojo result = new ScarecrowTilePojo();
 
-        result.setCurrentBurningTime(this.fuelManger.getCurrentBurningTime());
-        result.setTotalBurnTime(this.fuelManger.getTotalBurnTime());
-        result.setInPause(this.fuelManger.isInPause());
+        result.setCurrentBurningTime(this.fuelManager.getCurrentBurningTime());
+        result.setTotalBurnTime(this.fuelManager.getTotalBurnTime());
+        result.setTotalItemBurnTime(this.fuelManager.getTotalItemBurnTime());
+        result.setInPause(this.fuelManager.isInPause());
         result.setUuid(owner);
 
         return result;

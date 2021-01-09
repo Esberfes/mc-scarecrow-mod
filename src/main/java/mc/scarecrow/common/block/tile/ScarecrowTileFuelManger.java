@@ -21,6 +21,7 @@ public class ScarecrowTileFuelManger {
 
     private final AtomicInteger totalBurnTime;
     private final AtomicInteger currentBurningTime;
+    private final AtomicInteger totalItemBurnTime;
 
     private long lastUpdate;
     private final AtomicBoolean inPause;
@@ -29,6 +30,7 @@ public class ScarecrowTileFuelManger {
         this.supplier = supplier;
         this.totalBurnTime = new AtomicInteger();
         this.currentBurningTime = new AtomicInteger();
+        this.totalItemBurnTime = new AtomicInteger();
         this.inPause = new AtomicBoolean();
         this.inPause.set(false);
     }
@@ -47,6 +49,7 @@ public class ScarecrowTileFuelManger {
                 if (count > 0) {
                     ItemStack refuel = itemStack.split(1);
                     currentBurningTime.set(ForgeHooks.getBurnTime(refuel));
+                    totalItemBurnTime.set(ForgeHooks.getBurnTime(refuel));
                 }
             }
         }
@@ -97,5 +100,13 @@ public class ScarecrowTileFuelManger {
 
     public synchronized void setCurrentBurningTime(int currentBurningTime) {
         this.currentBurningTime.set(currentBurningTime);
+    }
+
+    public synchronized int getTotalItemBurnTime() {
+        return this.totalItemBurnTime.get();
+    }
+
+    public synchronized void setTotalItemBurnTime(int totalItemBurnTime) {
+        this.totalItemBurnTime.set(totalItemBurnTime);
     }
 }
