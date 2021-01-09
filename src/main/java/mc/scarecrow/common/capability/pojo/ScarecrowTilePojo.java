@@ -6,6 +6,7 @@ public class ScarecrowTilePojo {
 
     private int currentBurningTime;
     private int totalBurnTime;
+    private int totalItemBurnTime;
     private boolean inPause;
     private UUID uuid;
 
@@ -39,5 +40,13 @@ public class ScarecrowTilePojo {
 
     public void setTotalBurnTime(int totalBurnTime) {
         this.totalBurnTime = totalBurnTime;
+    }
+
+    public void setTotalItemBurnTime(int totalItemBurnTime) {
+        this.totalItemBurnTime = totalItemBurnTime;
+    }
+
+    public int getTotalItemBurnTime() {
+        return this.totalItemBurnTime;
     }
 }

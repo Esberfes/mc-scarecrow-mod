@@ -51,7 +51,7 @@ public class ScarecrowContainer extends Container {
                         this.playerInventory,
                         playerInvCol + NUMBER_COLUMNS + (playerInvRow * 9),
                         leftCol + SLOT_BORDER_SIZE + (playerInvCol * SLOT_SIZE),
-                        Y_OFFSET_GRID + 1)
+                        Y_OFFSET_GRID + SLOT_BORDER_SIZE + (playerInvRow * SLOT_SIZE))
                 );
             }
         }
@@ -94,5 +94,9 @@ public class ScarecrowContainer extends Container {
     @Override
     public boolean canInteractWith(PlayerEntity playerIn) {
         return isWithinUsableDistance(IWorldPosCallable.of(world, scarecrowTile.getPos()), playerIn, RegistryHandler.scarecrowBlock.get());
+    }
+
+    public ScarecrowTile getScarecrowTile() {
+        return scarecrowTile;
     }
 }

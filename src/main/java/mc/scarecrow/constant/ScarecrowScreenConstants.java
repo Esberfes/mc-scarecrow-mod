@@ -12,4 +12,5 @@ public interface ScarecrowScreenConstants {
     int Y_OFFSET_GRID = 83;
     int NUMBER_COLUMNS = 9;
     int NUMBER_ROWS = 3;
+    int FLAME_HEIGHT = 14;
 }
