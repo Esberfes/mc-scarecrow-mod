@@ -1,10 +1,12 @@
 package mc.scarecrow.common.block;
 
+import mc.scarecrow.client.init.ClientRegistryHandler;
 import mc.scarecrow.common.block.tile.ScarecrowTile;
 import mc.scarecrow.common.capability.ScarecrowCapabilities;
 import mc.scarecrow.common.entity.ScarecrowPlayerEntity;
-import mc.scarecrow.common.init.RegistryHandler;
+import mc.scarecrow.common.init.CommonRegistryHandler;
 import mc.scarecrow.utils.LogUtils;
+import mc.scarecrow.utils.TileUtils;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
@@ -34,6 +36,8 @@ import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ToolType;
 import net.minecraftforge.fml.network.NetworkHooks;
 import org.apache.logging.log4j.LogManager;
@@ -41,6 +45,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 
 public class ScarecrowBlock extends Block {
 
@@ -62,11 +67,16 @@ public class ScarecrowBlock extends Block {
     }
 
     @Override
+    public void onBlockAdded(BlockState state, World worldIn, BlockPos pos, BlockState oldState, boolean isMoving) {
+        super.onBlockAdded(state, worldIn, pos, oldState, isMoving);
+    }
+
+    @Override
     public List<ItemStack> getDrops(BlockState state, LootContext.Builder builder) {
         List<ItemStack> dropsOriginal = super.getDrops(state, builder);
         if (!dropsOriginal.isEmpty())
             return dropsOriginal;
-        return Collections.singletonList(new ItemStack(RegistryHandler.scarecrowBlockItem.get(), 1));
+        return Collections.singletonList(new ItemStack(CommonRegistryHandler.scarecrowBlockItem.get(), 1));
     }
 
     @Override
@@ -140,13 +150,13 @@ public class ScarecrowBlock extends Block {
 
     @Override
     public void onReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (state.getBlock() != newState.getBlock()) {
+        if (state.getBlock() != newState.getBlock() && !world.isRemote()) {
             TileEntity tileentity = world.getTileEntity(pos);
             if (tileentity instanceof ScarecrowTile) {
                 InventoryHelper.dropInventoryItems(world, pos, (ScarecrowTile) tileentity);
                 world.updateComparatorOutputLevel(pos, this);
+                onRemovedFromWorld(world, pos);
             }
-            onRemovedFromWorld(world, pos);
             super.onReplaced(state, world, pos, newState, isMoving);
         }
     }
@@ -186,5 +196,25 @@ public class ScarecrowBlock extends Block {
         } catch (Throwable e) {
             LogUtils.printError(LOGGER, e);
         }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    @Override
+    public void animateTick(BlockState state, World world, BlockPos pos, Random random) {
+        super.animateTick(state, world, pos, random);
+        TileUtils.executeIfTile(world, pos, ScarecrowTile.class, (t) -> {
+            if (t.isActive() && random.nextBoolean()) {
+                for (int i = 0; i < 2; i++) {
+                    double xOrigin = pos.getX() + 0.5;
+                    double yOrigin = pos.getY() + (0.6D + (0.9D - 0.6D) * random.nextDouble());
+                    double zOrigin = pos.getZ() + 0.5;
+                    double xSpeed = (random.nextFloat() - 0.5D) * 0.3D;
+                    double ySpeed = Math.abs((random.nextFloat() - 0.5D) * 0.3D);
+                    double zSpeed = (random.nextFloat() - 0.5D) * 0.3D;
+
+                    world.addParticle(ClientRegistryHandler.ClientRegistry.scarecrowParticle, xOrigin, yOrigin, zOrigin, xSpeed, ySpeed, zSpeed);
+                }
+            }
+        });
     }
 }

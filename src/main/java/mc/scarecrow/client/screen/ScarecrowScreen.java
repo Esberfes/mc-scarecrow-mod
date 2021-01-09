@@ -1,4 +1,4 @@
-package mc.scarecrow.client.screens;
+package mc.scarecrow.client.screen;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;

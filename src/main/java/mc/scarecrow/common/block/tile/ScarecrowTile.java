@@ -5,7 +5,7 @@ import mc.scarecrow.common.block.ScarecrowBlock;
 import mc.scarecrow.common.block.container.ScarecrowContainer;
 import mc.scarecrow.common.capability.pojo.ScarecrowTilePojo;
 import mc.scarecrow.common.entity.ScarecrowPlayerEntity;
-import mc.scarecrow.common.init.RegistryHandler;
+import mc.scarecrow.common.init.CommonRegistryHandler;
 import mc.scarecrow.utils.LogUtils;
 import mcp.mobius.waila.api.IComponentProvider;
 import mcp.mobius.waila.api.IDataAccessor;
@@ -57,7 +57,7 @@ public class ScarecrowTile extends LockableLootTileEntity implements ITickableTi
     private double lastYaw = 0D;
 
     public ScarecrowTile() {
-        super(RegistryHandler.scarecrowTileBlock.get());
+        super(CommonRegistryHandler.scarecrowTileBlock.get());
         numPlayersUsing = 0;
         chestContents = NonNullList.withSize(INVENTORY_SIZE, ItemStack.EMPTY);
 
@@ -210,7 +210,8 @@ public class ScarecrowTile extends LockableLootTileEntity implements ITickableTi
             if (!this.checkLootAndWrite(tag))
                 ItemStackHelper.saveAllItems(tag, this.chestContents);
 
-            compoundNBT.putString(NBT_TILE_DATA, new Gson().toJson(toPojo()));
+            if (!tag.contains(NBT_TILE_DATA))
+                compoundNBT.putString(NBT_TILE_DATA, new Gson().toJson(toPojo()));
 
             return compoundNBT;
 

@@ -17,7 +17,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 import static mc.scarecrow.constant.ScarecrowModConstants.MOD_IDENTIFIER;
 
-public class RegistryHandler {
+public class CommonRegistryHandler {
 
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MOD_IDENTIFIER);
     public static final DeferredRegister<TileEntityType<?>> TILES = DeferredRegister.create(ForgeRegistries.TILE_ENTITIES, MOD_IDENTIFIER);
@@ -25,12 +25,9 @@ public class RegistryHandler {
     public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITIES, MOD_IDENTIFIER);
 
     public static final RegistryObject<Block> scarecrowBlock = BLOCKS.register("scarecrow_block", ScarecrowBlock::new);
-    public static final RegistryObject<Item> scarecrowBlockItem = ITEMS.register(scarecrowBlock.getId().getPath(), () -> {
-                return new BlockItem(scarecrowBlock.get(), new Item.Properties()
-                        .group(ItemGroup.BUILDING_BLOCKS)
-                        .maxStackSize(10));
-
-            }
+    public static final RegistryObject<Item> scarecrowBlockItem = ITEMS.register(scarecrowBlock.getId().getPath(), () -> new BlockItem(scarecrowBlock.get(), new Item.Properties()
+            .group(ItemGroup.BUILDING_BLOCKS)
+            .maxStackSize(10))
     );
 
     @SuppressWarnings("ConstantConditions")

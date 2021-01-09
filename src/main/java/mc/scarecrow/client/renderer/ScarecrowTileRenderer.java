@@ -21,6 +21,7 @@ import net.minecraft.util.Direction;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Quaternion;
 import net.minecraft.util.math.vector.Vector3d;
+import net.minecraft.util.math.vector.Vector3i;
 import net.minecraftforge.client.model.data.EmptyModelData;
 import net.minecraftforge.common.ForgeHooks;
 import org.apache.logging.log4j.LogManager;
@@ -54,17 +55,12 @@ public class ScarecrowTileRenderer extends TileEntityRenderer<ScarecrowTile> {
 
             BlockState tileState = player.world.getBlockState(tile.getPos());
             Direction tileFacingDirection = tileState.get(ScarecrowBlock.FACING);
+            Vector3d tilePositionVec = new Vector3d(tile.getPos().getX(), tile.getPos().getY(), tile.getPos().getZ());
 
-            if (target != null && ForgeHooks.getBurnTime(target.getHeldItemMainhand()) > 0) {
-                Vector3d tilePositionVec = new Vector3d(tile.getPos().getX(), tile.getPos().getY(), tile.getPos().getZ());
-
-                double targetYaw = lookAt(tilePositionVec, target);
-
-                tile.setLastYaw(calcAngle(tileFacingDirection, targetYaw, tile.getLastYaw(), DELTA_ANGLE));
-
-            } else {
-                tile.setLastYaw(calcAngle(tileFacingDirection, tileFacingDirection.getHorizontalAngle(), tile.getLastYaw(), DELTA_ANGLE));
-            }
+            if (target != null && ForgeHooks.getBurnTime(target.getHeldItemMainhand()) > 0)
+                tile.setLastYaw(calcAngle(tileFacingDirection, lookAt(tilePositionVec, target), tile.getLastYaw(), DELTA_ANGLE));
+            else
+                tile.setLastYaw(calcAngle(tileFacingDirection, lookAt(tilePositionVec, tileFacingDirection.getDirectionVec()), tile.getLastYaw(), DELTA_ANGLE));
 
             matrixStack.rotate(new Quaternion(0, (float) tile.getLastYaw(), 0, true));
 
@@ -87,19 +83,7 @@ public class ScarecrowTileRenderer extends TileEntityRenderer<ScarecrowTile> {
     }
 
     public double calcAngle(Direction direction, double target, double lastYaw, int delta) {
-        double dirAngle;
-        switch (direction) {
-            case NORTH:
-            case EAST:
-                dirAngle = 180D;
-                break;
-            case SOUTH:
-            case WEST:
-                dirAngle = -180D;
-                break;
-            default:
-                dirAngle = 0D;
-        }
+        double dirAngle = directionToAngle(direction);
 
         double goalTarget = ((target + dirAngle) * -1);
 
@@ -114,11 +98,35 @@ public class ScarecrowTileRenderer extends TileEntityRenderer<ScarecrowTile> {
         return targetAngle < 0D ? Math.max(targetAngle + lastYaw, goalTarget) : Math.min(targetAngle + lastYaw, goalTarget);
     }
 
-    public double lookAt(Vector3d vector3d, Entity entity) {
-        Vector3d target = entity.getPositionVec();
-        double d0 = target.x - vector3d.x;
-        double d2 = target.z - vector3d.z;
+    public double lookAt(Vector3d origin, Vector3i targetFacingDirection) {
+        return lookAt(origin, origin.add(new Vector3d(targetFacingDirection.getX(), targetFacingDirection.getY(), targetFacingDirection.getZ())));
+    }
+
+    public double lookAt(Vector3d origin, Entity target) {
+        return lookAt(origin, target.getPositionVec());
+    }
+
+    public double lookAt(Vector3d origin, Vector3d targetVector) {
+        double d0 = targetVector.x - origin.x;
+        double d2 = targetVector.z - origin.z;
 
         return (MathHelper.wrapDegrees((MathHelper.atan2(d2, d0) * (180F / Math.PI)) - 90.0F));
+    }
+
+    private double directionToAngle(Direction direction) {
+        double dirAngle;
+        switch (direction) {
+            case NORTH:
+            case EAST:
+                dirAngle = 180D;
+                break;
+            case SOUTH:
+            case WEST:
+                dirAngle = -180D;
+                break;
+            default:
+                dirAngle = 0D;
+        }
+        return dirAngle;
     }
 }

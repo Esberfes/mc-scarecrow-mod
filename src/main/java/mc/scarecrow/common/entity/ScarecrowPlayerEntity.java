@@ -1,7 +1,7 @@
 package mc.scarecrow.common.entity;
 
 import com.mojang.authlib.GameProfile;
-import mc.scarecrow.common.init.RegistryHandler;
+import mc.scarecrow.common.init.CommonRegistryHandler;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntitySize;
 import net.minecraft.entity.EntityType;
@@ -80,7 +80,7 @@ public class ScarecrowPlayerEntity extends FakePlayer {
 
     @Override
     public boolean isInvulnerableTo(DamageSource source) {
-        return false;
+        return true;
     }
 
     @Override
@@ -90,7 +90,7 @@ public class ScarecrowPlayerEntity extends FakePlayer {
 
     @Override
     public boolean isInvulnerable() {
-        return false;
+        return true;
     }
 
     public Vector3d getPositionVec() {
@@ -108,7 +108,7 @@ public class ScarecrowPlayerEntity extends FakePlayer {
 
     @Override
     public EntityType<?> getType() {
-        return RegistryHandler.FAKE_PLAYER.get();
+        return CommonRegistryHandler.FAKE_PLAYER.get();
     }
 
     @Override

@@ -32,7 +32,7 @@ public class ScarecrowCapabilities {
     }
 
     @SubscribeEvent
-    public static void attachCapabilities(AttachCapabilitiesEvent<World> event) {
+    public static void attachWorldCapabilities(AttachCapabilitiesEvent<World> event) {
         World world = event.getObject();
         if (!world.isRemote() && (world instanceof ServerWorld)) {
             attach(event, CHUNK_CAPABILITY, new ScarecrowChunkCapability((ServerWorld) world), "chunk_capability");
@@ -40,7 +40,7 @@ public class ScarecrowCapabilities {
     }
 
     @SuppressWarnings({"all", "rawtypes"})
-    private static <T> void attach(AttachCapabilitiesEvent<World> event, Capability<T> capability, T capabilityInstance, String identifier) {
+    private static <T> void attach(AttachCapabilitiesEvent<?> event, Capability<T> capability, T capabilityInstance, String identifier) {
         try {
             LazyOptional<T> tracker = LazyOptional.of(() -> capabilityInstance);
 
