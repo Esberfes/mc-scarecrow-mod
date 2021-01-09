@@ -7,7 +7,7 @@ import mc.scarecrow.common.init.CommonRegistryHandler;
 import mc.scarecrow.common.network.ClientProxy;
 import mc.scarecrow.common.network.IProxy;
 import mc.scarecrow.common.network.ServerProxy;
-import mc.scarecrow.utils.LogUtils;
+import mc.scarecrow.lib.utils.LogUtils;
 import mcp.mobius.waila.api.IRegistrar;
 import mcp.mobius.waila.api.IWailaPlugin;
 import mcp.mobius.waila.api.TooltipPosition;

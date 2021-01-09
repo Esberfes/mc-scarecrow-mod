@@ -1,6 +1,6 @@
 package mc.scarecrow.common.capability;
 
-import mc.scarecrow.utils.LogUtils;
+import mc.scarecrow.lib.utils.LogUtils;
 import net.minecraft.nbt.INBT;
 import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;

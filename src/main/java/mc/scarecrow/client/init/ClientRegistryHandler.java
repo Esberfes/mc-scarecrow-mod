@@ -2,7 +2,7 @@ package mc.scarecrow.client.init;
 
 import mc.scarecrow.ScarecrowMod;
 import mc.scarecrow.client.particle.ScarecrowParticleFactory;
-import mc.scarecrow.utils.LogUtils;
+import mc.scarecrow.lib.utils.LogUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.particles.BasicParticleType;
 import net.minecraft.particles.ParticleType;

@@ -1,7 +1,7 @@
 package mc.scarecrow.common.init.events;
 
 import mc.scarecrow.common.block.container.ScarecrowContainer;
-import mc.scarecrow.utils.LogUtils;
+import mc.scarecrow.lib.utils.LogUtils;
 import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.extensions.IForgeContainerType;

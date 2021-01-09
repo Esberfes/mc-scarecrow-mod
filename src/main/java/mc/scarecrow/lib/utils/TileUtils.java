@@ -1,5 +1,6 @@
-package mc.scarecrow.utils;
+package mc.scarecrow.lib.utils;
 
+import net.minecraft.client.world.ClientWorld;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -48,6 +49,15 @@ public abstract class TileUtils {
     public static <T extends TileEntity> void executeIfTileOnServer(World world, BlockPos pos, Class<T> type, Consumer<T> consumer) {
         try {
             if (world != null && !world.isRemote() && world instanceof ServerWorld)
+                executeIfTile(world, pos, type, consumer);
+        } catch (Throwable e) {
+            LogUtils.printError(LOGGER, e);
+        }
+    }
+
+    public static <T extends TileEntity> void executeIfTileOnClient(World world, BlockPos pos, Class<T> type, Consumer<T> consumer) {
+        try {
+            if (world != null && world.isRemote() && world instanceof ClientWorld)
                 executeIfTile(world, pos, type, consumer);
         } catch (Throwable e) {
             LogUtils.printError(LOGGER, e);

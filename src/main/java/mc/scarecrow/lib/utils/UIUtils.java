@@ -1,4 +1,4 @@
-package mc.scarecrow.utils;
+package mc.scarecrow.lib.utils;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import net.minecraft.client.gui.FontRenderer;

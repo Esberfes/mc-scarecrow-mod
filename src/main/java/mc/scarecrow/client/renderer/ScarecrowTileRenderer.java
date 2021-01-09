@@ -4,7 +4,7 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import mc.scarecrow.ScarecrowMod;
 import mc.scarecrow.common.block.ScarecrowBlock;
 import mc.scarecrow.common.block.tile.ScarecrowTile;
-import mc.scarecrow.utils.LogUtils;
+import mc.scarecrow.lib.utils.LogUtils;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
