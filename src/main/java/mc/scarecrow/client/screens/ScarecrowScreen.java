@@ -54,6 +54,7 @@ public class ScarecrowScreen extends ContainerScreen<ScarecrowContainer> impleme
     @Override
     protected void drawGuiContainerBackgroundLayer(MatrixStack matrixStack, float partialTicks, int mouseX, int mouseY) {
         try {
+            // Main screen print
             RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
             int x = (this.width - this.xSize) / 2;
             int y = (this.height - this.ySize) / 2;
@@ -61,6 +62,7 @@ public class ScarecrowScreen extends ContainerScreen<ScarecrowContainer> impleme
             Minecraft.getInstance().getTextureManager().bindTexture(GUI);
             blit(matrixStack, x, y, 0, 0, this.xSize, this.ySize, this.spriteXSize, this.spriteYSize);
 
+            // Flame handle
             if (this.tile.isActive()) {
                 int flamePixelsLeft = getBurnLeftScaled();
                 int flameOffset = FLAME_HEIGHT - flamePixelsLeft;
