@@ -5,6 +5,7 @@ import mc.scarecrow.ScarecrowMod;
 import mc.scarecrow.common.block.ScarecrowBlock;
 import mc.scarecrow.common.block.tile.ScarecrowTile;
 import mc.scarecrow.lib.utils.LogUtils;
+import mc.scarecrow.lib.utils.UIUtils;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
@@ -15,13 +16,11 @@ import net.minecraft.client.renderer.RenderTypeLookup;
 import net.minecraft.client.renderer.model.IBakedModel;
 import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.vector.Quaternion;
 import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.util.math.vector.Vector3i;
 import net.minecraftforge.client.model.data.EmptyModelData;
 import net.minecraftforge.common.ForgeHooks;
 import org.apache.logging.log4j.LogManager;
@@ -29,7 +28,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.Random;
 
-public class ScarecrowTileRenderer extends TileEntityRenderer<ScarecrowTile> {
+public class ScarecrowTileRenderer extends TileEntityRenderer<TileEntity> {
 
     private static final Logger LOGGER = LogManager.getLogger();
     private static final int DELTA_ANGLE = 5;
@@ -41,36 +40,34 @@ public class ScarecrowTileRenderer extends TileEntityRenderer<ScarecrowTile> {
     }
 
     @Override
-    public void render(ScarecrowTile tile, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer buffer,
+    public void render(TileEntity tile, float partialTicks, MatrixStack matrixStack, IRenderTypeBuffer buffer,
                        int combinedLight, int combinedOverlay) {
         try {
-            PlayerEntity player = ScarecrowMod.PROXY.getPlayerEntity();
-            PlayerEntity target = player.world.getClosestPlayer((double) tile.getPos().getX() + 0.5D,
-                    (double) tile.getPos().getY() + 0.5D,
-                    (double) tile.getPos().getZ() + 0.5D,
-                    20.0D, false);
-
             matrixStack.push();
             matrixStack.translate(0.5, 0.5, 0.5);
 
+            if (!(tile instanceof ScarecrowTile))
+                throw new Exception("Tile must be a instance of ScarecrowTile");
+
+            PlayerEntity player = ScarecrowMod.PROXY.getPlayerEntity();
+            PlayerEntity target = ((ScarecrowTile) tile).getClosestPlayer() != null ? player.world.getPlayerByUuid(((ScarecrowTile) tile).getClosestPlayer()) : null;
             BlockState tileState = player.world.getBlockState(tile.getPos());
             Direction tileFacingDirection = tileState.get(ScarecrowBlock.FACING);
             Vector3d tilePositionVec = new Vector3d(tile.getPos().getX(), tile.getPos().getY(), tile.getPos().getZ());
 
             if (target != null && ForgeHooks.getBurnTime(target.getHeldItemMainhand()) > 0)
-                tile.setLastYaw(calcAngle(tileFacingDirection, lookAt(tilePositionVec, target), tile.getLastYaw(), DELTA_ANGLE));
+                ((ScarecrowTile) tile).setLastYaw(UIUtils.calcAngle(tileFacingDirection, UIUtils.lookAt(tilePositionVec, target), ((ScarecrowTile) tile).getLastYaw(), DELTA_ANGLE));
             else
-                tile.setLastYaw(calcAngle(tileFacingDirection, lookAt(tilePositionVec, tileFacingDirection.getDirectionVec()), tile.getLastYaw(), DELTA_ANGLE));
+                ((ScarecrowTile) tile).setLastYaw(UIUtils.calcAngle(tileFacingDirection, UIUtils.lookAt(tilePositionVec, tileFacingDirection.getDirectionVec()), ((ScarecrowTile) tile).getLastYaw(), DELTA_ANGLE));
 
-            matrixStack.rotate(new Quaternion(0, (float) tile.getLastYaw(), 0, true));
+            matrixStack.rotate(new Quaternion(0, (float) ((ScarecrowTile) tile).getLastYaw(), 0, true));
 
         } catch (Throwable e) {
             LogUtils.printError(LOGGER, e);
-            matrixStack.clear();
         } finally {
             matrixStack.translate(-0.5, -0.5, -0.5);
             for (RenderType type : RenderType.getBlockRenderTypes()) {
-                if (RenderTypeLookup.canRenderInLayer(block.getDefaultState(), type)) {
+                if (RenderTypeLookup.canRenderInLayer(block.getDefaultState(), type) && tile.getWorld() != null) {
                     BlockRendererDispatcher blockRenderer = Minecraft.getInstance().getBlockRendererDispatcher();
                     IBakedModel model = blockRenderer.getModelForState(block.getDefaultState());
                     blockRenderer.getBlockModelRenderer().renderModel(tile.getWorld(), model, block.getDefaultState(),
@@ -80,53 +77,5 @@ public class ScarecrowTileRenderer extends TileEntityRenderer<ScarecrowTile> {
             }
             matrixStack.pop();
         }
-    }
-
-    public double calcAngle(Direction direction, double target, double lastYaw, int delta) {
-        double dirAngle = directionToAngle(direction);
-
-        double goalTarget = ((target + dirAngle) * -1);
-
-        while (lastYaw - goalTarget < -180.0F)
-            goalTarget -= 360.0F;
-
-        while (lastYaw - goalTarget >= 180.0F)
-            goalTarget += 360.0F;
-
-        double targetAngle = goalTarget < 0D ? Math.max(goalTarget, -delta) : Math.min(goalTarget, delta);
-
-        return targetAngle < 0D ? Math.max(targetAngle + lastYaw, goalTarget) : Math.min(targetAngle + lastYaw, goalTarget);
-    }
-
-    public double lookAt(Vector3d origin, Vector3i targetFacingDirection) {
-        return lookAt(origin, origin.add(new Vector3d(targetFacingDirection.getX(), targetFacingDirection.getY(), targetFacingDirection.getZ())));
-    }
-
-    public double lookAt(Vector3d origin, Entity target) {
-        return lookAt(origin, target.getPositionVec());
-    }
-
-    public double lookAt(Vector3d origin, Vector3d targetVector) {
-        double d0 = targetVector.x - origin.x;
-        double d2 = targetVector.z - origin.z;
-
-        return (MathHelper.wrapDegrees((MathHelper.atan2(d2, d0) * (180F / Math.PI)) - 90.0F));
-    }
-
-    private double directionToAngle(Direction direction) {
-        double dirAngle;
-        switch (direction) {
-            case NORTH:
-            case EAST:
-                dirAngle = 180D;
-                break;
-            case SOUTH:
-            case WEST:
-                dirAngle = -180D;
-                break;
-            default:
-                dirAngle = 0D;
-        }
-        return dirAngle;
     }
 }

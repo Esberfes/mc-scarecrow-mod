@@ -3,14 +3,13 @@ package mc.scarecrow.common.block.tile;
 import mc.scarecrow.common.block.container.ScarecrowContainer;
 import mc.scarecrow.common.capability.pojo.ScarecrowTilePojo;
 import mc.scarecrow.common.entity.ScarecrowPlayerEntity;
-import mc.scarecrow.common.init.CommonRegistryHandler;
+import mc.scarecrow.lib.register.AutoRegister;
 import mc.scarecrow.lib.tile.SyncLockableLootTileBase;
 import mc.scarecrow.lib.utils.LogUtils;
+import mc.scarecrow.lib.utils.TileUtils;
 import mcp.mobius.waila.api.IComponentProvider;
 import mcp.mobius.waila.api.IDataAccessor;
 import mcp.mobius.waila.api.IPluginConfig;
-import net.minecraft.client.entity.player.ClientPlayerEntity;
-import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.container.Container;
@@ -33,49 +32,14 @@ public class ScarecrowTile extends SyncLockableLootTileBase<ScarecrowTilePojo> i
     private ScarecrowPlayerEntity fakePlayer;
     private UUID owner;
     private double lastYaw = 0D;
+    private UUID closestPlayer;
 
     public ScarecrowTile() {
-        super(CommonRegistryHandler.scarecrowTileBlock.get(), INVENTORY_SIZE);
+        super(AutoRegister.TILE_ENTITIES.get("scarecrow_block"), INVENTORY_SIZE);
 
         fuelManager = new ScarecrowTileFuelManger(this::getItems);
         taskInProgress = new AtomicBoolean();
         taskInProgress.set(false);
-    }
-
-    @Override
-    public void onTickServer(ServerWorld world, long serverTicks) {
-        if (taskInProgress.get())
-            return;
-
-        taskInProgress.set(true);
-
-        world.getServer().deferTask(() -> {
-            try {
-                if (serverTicks % 10 == 0) {
-                    fuelManager.onUpdate();
-
-                    if (isActive() && fakePlayer == null)
-                        fakePlayer = ScarecrowPlayerEntity.create(world, getPos(), UUID.randomUUID());
-
-                    if (!isActive() && fakePlayer != null) {
-                        ScarecrowPlayerEntity.remove(fakePlayer, world);
-                        fakePlayer = null;
-                    }
-
-                    shouldUpdate();
-                }
-            } catch (Throwable e) {
-                LogUtils.printError(LOGGER, e);
-            } finally {
-                // Release flag for next update
-                taskInProgress.set(false);
-            }
-        });
-    }
-
-    @Override
-    public void onTickClient(ClientWorld world, long clientTicks) {
-
     }
 
     public boolean isActive() {
@@ -118,6 +82,48 @@ public class ScarecrowTile extends SyncLockableLootTileBase<ScarecrowTilePojo> i
         this.lastYaw = lastYaw;
     }
 
+    public UUID getClosestPlayer() {
+        return closestPlayer;
+    }
+
+    @Override
+    public void onTickServer(ServerWorld world, long serverTicks) {
+        if (taskInProgress.get())
+            return;
+
+        taskInProgress.set(true);
+
+        world.getServer().deferTask(() -> {
+            try {
+                if (serverTicks % 10 == 0) {
+                    fuelManager.onUpdate(serverTicks);
+
+                    if (isActive() && fakePlayer == null)
+                        fakePlayer = ScarecrowPlayerEntity.create(world, getPos(), UUID.randomUUID());
+
+                    if (!isActive() && fakePlayer != null) {
+                        ScarecrowPlayerEntity.remove(fakePlayer, world);
+                        fakePlayer = null;
+                    }
+
+                    PlayerEntity closestPlayer = world.getClosestPlayer((double) getPos().getX() + 0.5D,
+                            (double) getPos().getY() + 0.5D,
+                            (double) getPos().getZ() + 0.5D,
+                            20.0D, e -> !(e instanceof ScarecrowPlayerEntity));
+
+                    this.closestPlayer = closestPlayer != null ? closestPlayer.getGameProfile().getId() : null;
+
+                    shouldUpdate();
+                }
+            } catch (Throwable e) {
+                LogUtils.printError(LOGGER, e);
+            } finally {
+                // Release flag for next update
+                taskInProgress.set(false);
+            }
+        });
+    }
+
     @Override
     protected Class<ScarecrowTilePojo> getPojoClass() {
         return ScarecrowTilePojo.class;
@@ -130,6 +136,7 @@ public class ScarecrowTile extends SyncLockableLootTileBase<ScarecrowTilePojo> i
         this.fuelManager.setTotalBurnTime(pojo.getTotalBurnTime());
         this.fuelManager.setTotalItemBurnTime(pojo.getTotalItemBurnTime());
         this.owner = pojo.getUuid();
+        this.closestPlayer = pojo.getClosestPlayer();
     }
 
     @Override
@@ -140,7 +147,8 @@ public class ScarecrowTile extends SyncLockableLootTileBase<ScarecrowTilePojo> i
         result.setTotalBurnTime(this.fuelManager.getTotalBurnTime());
         result.setTotalItemBurnTime(this.fuelManager.getTotalItemBurnTime());
         result.setInPause(this.fuelManager.isInPause());
-        result.setUuid(owner);
+        result.setUuid(this.owner);
+        result.setClosestPlayer(this.closestPlayer);
 
         return result;
     }
@@ -171,19 +179,26 @@ public class ScarecrowTile extends SyncLockableLootTileBase<ScarecrowTilePojo> i
 
     @Override
     public void appendTail(List<ITextComponent> info, IDataAccessor accessor, IPluginConfig config) {
-        if (accessor.getTileEntity() instanceof ScarecrowTile) {
-            ScarecrowTile tile = (ScarecrowTile) accessor.getTileEntity();
+        TileUtils.executeIfTile(accessor.getWorld(), accessor.getPosition(), ScarecrowTile.class, tile -> {
             info.add(new StringTextComponent("Active: " + (tile.isActive() ? "yes" : "no")));
             info.add(new StringTextComponent("Pause: " + (tile.isPaused() ? "yes" : "no")));
             info.add(new StringTextComponent("Fuel: " + ticksToTime(tile.getTotalFuel())));
-            ClientPlayerEntity player;
-            if (tile.getOwner() != null && accessor.getWorld() != null && (player = (ClientPlayerEntity) accessor.getWorld().getPlayerByUuid(tile.getOwner())) != null)
+            PlayerEntity player;
+            if (tile.getOwner() != null && accessor.getWorld() != null && (player = accessor.getWorld().getPlayerByUuid(tile.getOwner())) != null)
                 info.add(new StringTextComponent("Owner: " + player.getGameProfile().getName()));
-        }
+        });
     }
 
     @Override
     public ItemStack getStack(IDataAccessor accessor, IPluginConfig config) {
-        return ((ScarecrowTile) accessor.getTileEntity()).chestContents.get(0);
+        return ItemStack.EMPTY;
+    }
+
+    @Override
+    public ITextComponent getDisplayName() {
+        PlayerEntity playerEntity;
+        return world == null || owner == null || (playerEntity = world.getPlayerByUuid(owner)) == null
+                ? super.getDisplayName()
+                : new StringTextComponent(playerEntity.getGameProfile().getName());
     }
 }

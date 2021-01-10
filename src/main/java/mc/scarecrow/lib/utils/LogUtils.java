@@ -5,24 +5,10 @@ import org.apache.logging.log4j.Logger;
 
 public abstract class LogUtils {
 
-    public static String methodName() {
-        final StackTraceElement[] ste = Thread.currentThread().getStackTrace();
-        return ste[2].getMethodName();
-    }
-
-    public static String methodNameAndLine() {
-        final StackTraceElement[] ste = Thread.currentThread().getStackTrace();
-        return ste[2].getMethodName() + " (" + ste[2].getLineNumber() + ")";
-    }
-
-    public static void printNullPointerStackTrace(Logger logger, Throwable t) {
-        if (t instanceof NullPointerException) {
-            logger.error(ExceptionUtils.getStackTrace(t));
-        }
-    }
-
     public static void printError(Logger logger, Throwable e) {
-        logger.error(LogUtils.methodNameAndLine() + ": " + e.getMessage());
-        printNullPointerStackTrace(logger, e);
+        final StackTraceElement[] ste = Thread.currentThread().getStackTrace();
+        logger.error(ste[2].getMethodName() + " (" + ste[2].getLineNumber() + ")" + ": " + e.getMessage());
+        if (e instanceof NullPointerException)
+            logger.error(ExceptionUtils.getStackTrace(e));
     }
 }

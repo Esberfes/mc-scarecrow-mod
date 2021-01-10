@@ -21,7 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class SyncLockableLootTileBase<PojoType> extends LockableLootTileEntity implements TilePojoHandler<PojoType>, TileSidedTickHandler {
 
@@ -30,30 +30,24 @@ public abstract class SyncLockableLootTileBase<PojoType> extends LockableLootTil
     protected final NonNullList<ItemStack> chestContents;
     private final AtomicBoolean dataChange;
     private int numPlayersUsing;
-    protected AtomicInteger serverTicks;
-    protected AtomicInteger clientTicks;
+    protected AtomicLong serverTicks;
+    protected AtomicLong clientTicks;
     private int chestSize;
 
-    protected SyncLockableLootTileBase(TileEntityType<? extends SyncLockableLootTileBase> tileType, int chestSize) {
+    protected SyncLockableLootTileBase(TileEntityType<?> tileType, int chestSize) {
         super(tileType);
         this.dataChange = new AtomicBoolean();
         this.chestSize = chestSize;
         this.chestContents = NonNullList.withSize(chestSize, ItemStack.EMPTY);
-        this.clientTicks = new AtomicInteger();
-        this.serverTicks = new AtomicInteger();
+        this.clientTicks = new AtomicLong();
+        this.serverTicks = new AtomicLong();
     }
 
-    protected SyncLockableLootTileBase(TileEntityType<? extends SyncLockableLootTileBase> tileType) {
+    protected SyncLockableLootTileBase(TileEntityType<?> tileType) {
         this(tileType, 0);
     }
 
-    @Override
-    public void tick() {
-        TileUtils.executeIfTileOnServer(world, pos, getSubClass(), syncLockableLootTileBase -> onTickServer((ServerWorld) world, serverTicks.getAndIncrement()));
-        TileUtils.executeIfTileOnClient(world, pos, getSubClass(), syncLockableLootTileBase -> onTickClient((ClientWorld) world, clientTicks.getAndIncrement()));
-
-    }
-
+    @SuppressWarnings("unchecked")
     private <T extends SyncLockableLootTileBase<PojoType>> Class<T> getSubClass() {
         return (Class<T>) this.getClass().asSubclass(this.getClass());
     }
@@ -68,47 +62,6 @@ public abstract class SyncLockableLootTileBase<PojoType> extends LockableLootTil
         this.world.notifyBlockUpdate(this.pos, this.getBlockState(), this.getBlockState(), 2);
 
         this.dataChange.set(true);
-    }
-
-    @Override
-    public CompoundNBT write(CompoundNBT compound) {
-        CompoundNBT tag = super.write(compound);
-
-        return writeTag(tag);
-    }
-
-    @Override
-    public void read(BlockState state, CompoundNBT nbt) {
-        super.read(state, nbt);
-        readTag(nbt);
-    }
-
-    @Override
-    public CompoundNBT getUpdateTag() {
-        return writeTag(super.getUpdateTag());
-    }
-
-    @Override
-    public void handleUpdateTag(BlockState state, CompoundNBT tag) {
-        super.handleUpdateTag(state, tag);
-        readTag(tag);
-    }
-
-    @Override
-    public void onDataPacket(NetworkManager net, SUpdateTileEntityPacket pkt) {
-        readTag(pkt.getNbtCompound());
-    }
-
-    @Override
-    public SUpdateTileEntityPacket getUpdatePacket() {
-        if (this.dataChange.get()) {
-            CompoundNBT compoundNBT = writeTag(new CompoundNBT());
-            this.dataChange.set(false);
-
-            return new SUpdateTileEntityPacket(getPos(), 0, compoundNBT);
-        }
-
-        return null;
     }
 
     private void readTag(CompoundNBT nbt) {
@@ -140,9 +93,100 @@ public abstract class SyncLockableLootTileBase<PojoType> extends LockableLootTil
 
         } catch (Throwable e) {
             LogUtils.printError(LOGGER, e);
+            return new CompoundNBT();
         }
+    }
 
-        return tag;
+    private void onOpenOrClose() {
+        Block block = this.getBlockState().getBlock();
+        if (this.world != null && block instanceof ScarecrowBlock) {
+            this.world.addBlockEvent(this.pos, block, 1, this.numPlayersUsing);
+            this.world.notifyNeighborsOfStateChange(this.pos, block);
+        }
+    }
+
+    @Override
+    public void tick() {
+        // Tick on server side
+        TileUtils.executeIfTileOnServer(world, pos, getSubClass(), syncLockableLootTileBase -> onTickServer((ServerWorld) world, serverTicks.getAndIncrement()));
+        // Tick on client side
+        TileUtils.executeIfTileOnClient(world, pos, getSubClass(), syncLockableLootTileBase -> onTickClient((ClientWorld) world, clientTicks.getAndIncrement()));
+    }
+
+    @Override
+    public void onTickClient(ClientWorld world, long clientTicks) {
+    }
+
+    @Override
+    public CompoundNBT write(CompoundNBT compound) {
+        try {
+            CompoundNBT tag = super.write(compound);
+            return writeTag(tag);
+
+        } catch (Throwable e) {
+            LogUtils.printError(LOGGER, e);
+            return new CompoundNBT();
+        }
+    }
+
+    @Override
+    public void read(BlockState state, CompoundNBT nbt) {
+        try {
+            super.read(state, nbt);
+            readTag(nbt);
+
+        } catch (Throwable e) {
+            LogUtils.printError(LOGGER, e);
+        }
+    }
+
+    @Override
+    public CompoundNBT getUpdateTag() {
+        try {
+            return writeTag(super.getUpdateTag());
+
+        } catch (Throwable e) {
+            LogUtils.printError(LOGGER, e);
+            return new CompoundNBT();
+        }
+    }
+
+    @Override
+    public void handleUpdateTag(BlockState state, CompoundNBT tag) {
+        try {
+            super.handleUpdateTag(state, tag);
+            readTag(tag);
+        } catch (Throwable e) {
+            LogUtils.printError(LOGGER, e);
+        }
+    }
+
+    @Override
+    public void onDataPacket(NetworkManager net, SUpdateTileEntityPacket pkt) {
+        try {
+            readTag(pkt.getNbtCompound());
+
+        } catch (Throwable e) {
+            LogUtils.printError(LOGGER, e);
+        }
+    }
+
+    @Override
+    public SUpdateTileEntityPacket getUpdatePacket() {
+        try {
+            if (this.dataChange.get()) {
+                CompoundNBT compoundNBT = writeTag(new CompoundNBT());
+                this.dataChange.set(false);
+
+                return new SUpdateTileEntityPacket(getPos(), 0, compoundNBT);
+            }
+
+            return null;
+
+        } catch (Throwable e) {
+            LogUtils.printError(LOGGER, e);
+            return null;
+        }
     }
 
     @Override
@@ -161,14 +205,6 @@ public abstract class SyncLockableLootTileBase<PojoType> extends LockableLootTil
         if (!player.isSpectator()) {
             --this.numPlayersUsing;
             this.onOpenOrClose();
-        }
-    }
-
-    private void onOpenOrClose() {
-        Block block = this.getBlockState().getBlock();
-        if (this.world != null && block instanceof ScarecrowBlock) {
-            this.world.addBlockEvent(this.pos, block, 1, this.numPlayersUsing);
-            this.world.notifyNeighborsOfStateChange(this.pos, block);
         }
     }
 

@@ -9,6 +9,7 @@ public class ScarecrowTilePojo {
     private int totalItemBurnTime;
     private boolean inPause;
     private UUID uuid;
+    private UUID closestPlayer;
 
     public int getCurrentBurningTime() {
         return currentBurningTime;
@@ -48,5 +49,13 @@ public class ScarecrowTilePojo {
 
     public int getTotalItemBurnTime() {
         return this.totalItemBurnTime;
+    }
+
+    public UUID getClosestPlayer() {
+        return closestPlayer;
+    }
+
+    public void setClosestPlayer(UUID closestPlayer) {
+        this.closestPlayer = closestPlayer;
     }
 }

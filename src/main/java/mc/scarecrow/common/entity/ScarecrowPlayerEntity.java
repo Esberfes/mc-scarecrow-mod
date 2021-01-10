@@ -1,7 +1,7 @@
 package mc.scarecrow.common.entity;
 
 import com.mojang.authlib.GameProfile;
-import mc.scarecrow.common.init.CommonRegistryHandler;
+import mc.scarecrow.lib.register.AutoRegister;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntitySize;
 import net.minecraft.entity.EntityType;
@@ -19,6 +19,8 @@ import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.GameType;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.util.FakePlayer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,10 +28,14 @@ import java.util.OptionalInt;
 import java.util.UUID;
 
 public class ScarecrowPlayerEntity extends FakePlayer {
+
+    private static final Logger LOGGER = LogManager.getLogger();
+
     private ServerWorld world;
     private GameProfile profile;
     private Vector3d positionVec;
     private BlockPos position;
+    private long tick;
 
     private ScarecrowPlayerEntity(ServerWorld world, GameProfile profile) {
         super(world, profile);
@@ -108,7 +114,7 @@ public class ScarecrowPlayerEntity extends FakePlayer {
 
     @Override
     public EntityType<?> getType() {
-        return CommonRegistryHandler.FAKE_PLAYER.get();
+        return AutoRegister.ENTITIES.get("fake_player");
     }
 
     @Override

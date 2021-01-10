@@ -3,15 +3,12 @@ package mc.scarecrow;
 import mc.scarecrow.client.init.ClientRegistryHandler;
 import mc.scarecrow.common.block.tile.ScarecrowTile;
 import mc.scarecrow.common.capability.ScarecrowCapabilities;
-import mc.scarecrow.common.init.CommonRegistryHandler;
 import mc.scarecrow.common.network.ClientProxy;
 import mc.scarecrow.common.network.IProxy;
 import mc.scarecrow.common.network.ServerProxy;
+import mc.scarecrow.lib.register.AutoRegister;
 import mc.scarecrow.lib.utils.LogUtils;
-import mcp.mobius.waila.api.IRegistrar;
-import mcp.mobius.waila.api.IWailaPlugin;
-import mcp.mobius.waila.api.TooltipPosition;
-import mcp.mobius.waila.api.WailaPlugin;
+import mcp.mobius.waila.api.*;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
@@ -34,7 +31,6 @@ public class ScarecrowMod implements IWailaPlugin {
         final IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
         modEventBus.addListener(this::onCommonSetup);
 
-        CommonRegistryHandler.init();
         ClientRegistryHandler.init();
 
         LOGGER.debug("Finishing registry");
@@ -50,7 +46,6 @@ public class ScarecrowMod implements IWailaPlugin {
 
     @Override
     public void register(IRegistrar iRegistrar) {
-        iRegistrar.registerComponentProvider(CommonRegistryHandler.scarecrowTileBlock.get().create(), TooltipPosition.TAIL, ScarecrowTile.class);
-        iRegistrar.registerStackProvider(CommonRegistryHandler.scarecrowTileBlock.get().create(), ScarecrowTile.class);
+        iRegistrar.registerComponentProvider((IComponentProvider) AutoRegister.TILE_ENTITIES.get("scarecrow_block").create(), TooltipPosition.TAIL, ScarecrowTile.class);
     }
 }

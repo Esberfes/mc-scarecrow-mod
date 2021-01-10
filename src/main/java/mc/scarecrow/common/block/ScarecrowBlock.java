@@ -4,7 +4,7 @@ import mc.scarecrow.client.init.ClientRegistryHandler;
 import mc.scarecrow.common.block.tile.ScarecrowTile;
 import mc.scarecrow.common.capability.ScarecrowCapabilities;
 import mc.scarecrow.common.entity.ScarecrowPlayerEntity;
-import mc.scarecrow.common.init.CommonRegistryHandler;
+import mc.scarecrow.lib.register.AutoRegister;
 import mc.scarecrow.lib.utils.LogUtils;
 import mc.scarecrow.lib.utils.TileUtils;
 import net.minecraft.block.Block;
@@ -19,7 +19,6 @@ import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.InventoryHelper;
 import net.minecraft.inventory.container.Container;
-import net.minecraft.inventory.container.INamedContainerProvider;
 import net.minecraft.item.BlockItemUseContext;
 import net.minecraft.item.ItemStack;
 import net.minecraft.loot.LootContext;
@@ -74,9 +73,11 @@ public class ScarecrowBlock extends Block {
     @Override
     public List<ItemStack> getDrops(BlockState state, LootContext.Builder builder) {
         List<ItemStack> dropsOriginal = super.getDrops(state, builder);
+
         if (!dropsOriginal.isEmpty())
             return dropsOriginal;
-        return Collections.singletonList(new ItemStack(CommonRegistryHandler.scarecrowBlockItem.get(), 1));
+
+        return Collections.singletonList(new ItemStack(AutoRegister.ITEMS.get("scarecrow_block"), 1));
     }
 
     @Override
@@ -108,36 +109,27 @@ public class ScarecrowBlock extends Block {
     @Override
     public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
         try {
-            if (!worldIn.isRemote()) {
-                TileEntity tileEntity = worldIn.getTileEntity(pos);
-                if (tileEntity instanceof INamedContainerProvider)
-                    NetworkHooks.openGui((ServerPlayerEntity) player, (INamedContainerProvider) tileEntity, tileEntity.getPos());
-                else
-                    throw new IllegalStateException("Our named container provider is missing!");
-            }
+            TileUtils.executeIfTileOnServer(worldIn, pos, ScarecrowTile.class,
+                    tile -> NetworkHooks.openGui((ServerPlayerEntity) player, tile, pos));
+
+            return ActionResultType.func_233537_a_(worldIn.isRemote());
+
         } catch (Throwable e) {
             LogUtils.printError(LOGGER, e);
+            return ActionResultType.FAIL;
         }
-
-        return ActionResultType.func_233537_a_(worldIn.isRemote());
     }
 
     @Override
     public void onBlockPlacedBy(World worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
         try {
-            if (!worldIn.isRemote()) {
-                TileEntity tileEntity = worldIn.getTileEntity(pos);
-                if (tileEntity instanceof ScarecrowTile) {
-                    ServerWorld serverWorld = (ServerWorld) worldIn;
-                    // Register into capabilities to keep chunk loaded
-                    worldIn.getCapability(ScarecrowCapabilities.CHUNK_CAPABILITY).ifPresent(tracker -> {
-                        ChunkPos chunkPos = serverWorld.getChunk(pos).getPos();
-                        tracker.add(chunkPos, pos);
-                    });
-
-                    ((ScarecrowTile) tileEntity).setOwner(((ServerPlayerEntity) placer).getGameProfile().getId());
-                }
-            }
+            TileUtils.executeIfTileOnServer(worldIn, pos, ScarecrowTile.class, scarecrowTile -> {
+                worldIn.getCapability(ScarecrowCapabilities.CHUNK_CAPABILITY).ifPresent(tracker -> {
+                    ChunkPos chunkPos = worldIn.getChunk(pos).getPos();
+                    tracker.add(chunkPos, pos);
+                });
+                scarecrowTile.setOwner(((ServerPlayerEntity) placer).getGameProfile().getId());
+            });
         } catch (Throwable e) {
             LogUtils.printError(LOGGER, e);
         }
@@ -150,14 +142,13 @@ public class ScarecrowBlock extends Block {
 
     @Override
     public void onReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (state.getBlock() != newState.getBlock() && !world.isRemote()) {
-            TileEntity tileentity = world.getTileEntity(pos);
-            if (tileentity instanceof ScarecrowTile) {
-                InventoryHelper.dropInventoryItems(world, pos, (ScarecrowTile) tileentity);
-                world.updateComparatorOutputLevel(pos, this);
+        if (state.getBlock() != newState.getBlock()) {
+            TileUtils.executeIfTileOnServer(world, pos, ScarecrowTile.class, scarecrowTile -> {
+                InventoryHelper.dropInventoryItems(world, pos, scarecrowTile);
+                world.updateComparatorOutputLevel(pos, state.getBlock());
                 onRemovedFromWorld(world, pos);
-            }
-            super.onReplaced(state, world, pos, newState, isMoving);
+                state.getBlock().onReplaced(state, world, pos, newState, isMoving);
+            });
         }
     }
 
@@ -176,23 +167,15 @@ public class ScarecrowBlock extends Block {
      */
     private void onRemovedFromWorld(World worldIn, BlockPos pos) {
         try {
-            if (!worldIn.isRemote()) {
-                if (worldIn.getBlockState(pos).getBlock() instanceof ScarecrowBlock) {
-                    ServerWorld serverWorld = (ServerWorld) worldIn;
-
-                    // Remove from capabilities
-                    worldIn.getCapability(ScarecrowCapabilities.CHUNK_CAPABILITY).ifPresent(tracker -> {
-                        ChunkPos chunkPos = serverWorld.getChunk(pos).getPos();
-                        tracker.remove(chunkPos, pos);
-                    });
-
-                    TileEntity tileEntity = worldIn.getTileEntity(pos);
-                    if (tileEntity instanceof ScarecrowTile) {
-                        // Remove fake players
-                        ScarecrowPlayerEntity.remove(((ScarecrowTile) tileEntity).getFakePlayer(), (ServerWorld) worldIn);
-                    }
-                }
-            }
+            TileUtils.executeIfTileOnServer(worldIn, pos, ScarecrowTile.class, scarecrowTile -> {
+                // Remove from capabilities
+                worldIn.getCapability(ScarecrowCapabilities.CHUNK_CAPABILITY).ifPresent(tracker -> {
+                    ChunkPos chunkPos = worldIn.getChunk(pos).getPos();
+                    tracker.remove(chunkPos, pos);
+                });
+                // Remove fake player
+                ScarecrowPlayerEntity.remove(scarecrowTile.getFakePlayer(), (ServerWorld) worldIn);
+            });
         } catch (Throwable e) {
             LogUtils.printError(LOGGER, e);
         }
@@ -202,7 +185,7 @@ public class ScarecrowBlock extends Block {
     @Override
     public void animateTick(BlockState state, World world, BlockPos pos, Random random) {
         super.animateTick(state, world, pos, random);
-        TileUtils.executeIfTile(world, pos, ScarecrowTile.class, (t) -> {
+        TileUtils.executeIfTileOnClient(world, pos, ScarecrowTile.class, (t) -> {
             if (t.isActive() && random.nextBoolean()) {
                 for (int i = 0; i < 2; i++) {
                     double xOrigin = pos.getX() + 0.5;

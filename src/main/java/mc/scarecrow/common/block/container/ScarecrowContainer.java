@@ -1,7 +1,7 @@
 package mc.scarecrow.common.block.container;
 
 import mc.scarecrow.common.block.tile.ScarecrowTile;
-import mc.scarecrow.common.init.CommonRegistryHandler;
+import mc.scarecrow.lib.register.AutoRegister;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.IInventory;
@@ -93,7 +93,7 @@ public class ScarecrowContainer extends Container {
 
     @Override
     public boolean canInteractWith(PlayerEntity playerIn) {
-        return isWithinUsableDistance(IWorldPosCallable.of(world, scarecrowTile.getPos()), playerIn, CommonRegistryHandler.scarecrowBlock.get());
+        return isWithinUsableDistance(IWorldPosCallable.of(world, scarecrowTile.getPos()), playerIn, AutoRegister.BLOCKS.get("scarecrow_block"));
     }
 
     public ScarecrowTile getScarecrowTile() {
