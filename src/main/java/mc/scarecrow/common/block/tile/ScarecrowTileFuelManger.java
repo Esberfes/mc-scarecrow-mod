@@ -15,11 +15,6 @@ public class ScarecrowTileFuelManger {
 
     private static final Logger LOGGER = LogManager.getLogger();
 
-    /**
-     * Minecraft tick = 0.05 seconds or 50 millis
-     */
-    private final static double TICK_TIME_RELATION = 50D;
-
     private final Supplier<NonNullList<ItemStack>> supplier;
 
     private final AtomicInteger totalBurnTime;

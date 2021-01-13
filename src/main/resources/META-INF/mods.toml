@@ -58,6 +58,12 @@ mandatory = true
 versionRange = "[1.16.3]"
 ordering = "NONE"
 side = "BOTH"
+[[dependencies.wawla]]
+modId = "waila"
+mandatory = false
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "BOTH"
 
 #[[dependencies.scarecrow]]
 #   modId="hwyla"
