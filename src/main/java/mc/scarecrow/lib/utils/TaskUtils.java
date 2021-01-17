@@ -1,20 +1,42 @@
 package mc.scarecrow.lib.utils;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
+import net.minecraftforge.fml.server.ServerLifecycleHooks;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.function.Consumer;
 
-public abstract class TileUtils {
+public abstract class TaskUtils {
 
     private static final Logger LOGGER = LogManager.getLogger();
 
-    private TileUtils() {
+    private TaskUtils() {
+    }
+
+    public static void addScheduledTaskOnSide(IWorld world, Runnable runnable) {
+        if (world == null)
+            return;
+
+        if (world.isRemote())
+            Minecraft.getInstance().execute(runnable);
+        else
+            ServerLifecycleHooks.getCurrentServer().execute(runnable);
+    }
+
+    public static <T extends TileEntity> void executeIfTileOnClient(World world, BlockPos pos, Class<T> type, Consumer<T> consumer) {
+        try {
+            if (world != null && world.isRemote() && world instanceof ClientWorld)
+                executeIfTile(world, pos, type, consumer);
+        } catch (Throwable e) {
+            LogUtils.printError(LOGGER, e);
+        }
     }
 
     public static <T extends TileEntity> T getTileEntity(World world, BlockPos pos, Class<T> type) {
@@ -49,15 +71,6 @@ public abstract class TileUtils {
     public static <T extends TileEntity> void executeIfTileOnServer(World world, BlockPos pos, Class<T> type, Consumer<T> consumer) {
         try {
             if (world != null && !world.isRemote() && world instanceof ServerWorld)
-                executeIfTile(world, pos, type, consumer);
-        } catch (Throwable e) {
-            LogUtils.printError(LOGGER, e);
-        }
-    }
-
-    public static <T extends TileEntity> void executeIfTileOnClient(World world, BlockPos pos, Class<T> type, Consumer<T> consumer) {
-        try {
-            if (world != null && world.isRemote() && world instanceof ClientWorld)
                 executeIfTile(world, pos, type, consumer);
         } catch (Throwable e) {
             LogUtils.printError(LOGGER, e);

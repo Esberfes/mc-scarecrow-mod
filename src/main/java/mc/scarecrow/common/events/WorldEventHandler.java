@@ -1,4 +1,4 @@
-package mc.scarecrow.common.init.events;
+package mc.scarecrow.common.events;
 
 import mc.scarecrow.common.block.tile.ScarecrowTile;
 import mc.scarecrow.common.entity.ScarecrowPlayerEntity;

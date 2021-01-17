@@ -1,43 +1,47 @@
 package mc.scarecrow.lib.register;
 
+import mc.scarecrow.lib.proxy.Proxy;
+import mc.scarecrow.lib.register.annotation.*;
 import mc.scarecrow.lib.utils.LogUtils;
 import net.minecraft.block.Block;
 import net.minecraft.entity.EntityType;
+import net.minecraft.inventory.container.ContainerType;
 import net.minecraft.item.Item;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.loading.FMLLoader;
-import net.minecraftforge.fml.loading.moddiscovery.ModFile;
-import net.minecraftforge.fml.loading.moddiscovery.ModFileInfo;
-import net.minecraftforge.forgespi.language.ModFileScanData;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.objectweb.asm.Type;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-import static mc.scarecrow.constant.ScarecrowModConstants.MOD_IDENTIFIER;
+import static mc.scarecrow.lib.core.LibCore.classesCache;
 
-@Mod.EventBusSubscriber(modid = MOD_IDENTIFIER, bus = Mod.EventBusSubscriber.Bus.MOD)
-public class AutoRegister {
-
-    private static final Logger LOGGER = LogManager.getLogger();
+public class LibAutoRegister {
 
     public static Map<String, Block> BLOCKS = new HashMap<>();
     public static Map<String, Item> ITEMS = new HashMap<>();
     public static Map<String, TileEntityType<?>> TILE_ENTITIES = new HashMap<>();
+    public static Map<String, ContainerType<?>> CONTAINERS = new HashMap<>();
     public static Map<String, EntityType<?>> ENTITIES = new HashMap<>();
 
+    private static final Logger LOGGER = LogManager.getLogger();
+
+    private String MOD_ID;
+
+    public LibAutoRegister(String MOD_ID) {
+        this.MOD_ID = MOD_ID;
+    }
+
     @SubscribeEvent
-    public static void registerBlocks(RegistryEvent.Register<Block> event) {
+    public void registerBlocks(RegistryEvent.Register<Block> event) {
         try {
-            for (Class<?> clazz : getClassesFromModId(MOD_IDENTIFIER)) {
+            for (Class<?> clazz : classesCache) {
                 Map<Method, AutoRegisterBlock> methods = Arrays.stream(clazz.getDeclaredMethods())
                         .filter(m -> m.isAnnotationPresent(AutoRegisterBlock.class))
                         .collect(Collectors.toMap((a) -> a, (a) -> a.getAnnotation(AutoRegisterBlock.class)));
@@ -48,9 +52,11 @@ public class AutoRegister {
                     block.setRegistryName(id);
 
                     event.getRegistry().register(block);
-                    BLOCKS.put(id, block);
+                    LibAutoRegister.BLOCKS.put(id, block);
 
-                    LOGGER.info("Registered Block with id: " + id + ", and type: " + (block.getRegistryName() != null ? block.getRegistryName().toString() : id) + " on side: " + FMLLoader.getDist());
+                    LOGGER.info("Registered Block with id: " + id + ", and type: "
+                            + (block.getRegistryName() != null ? block.getRegistryName().toString() : id)
+                            + " on side: " + Proxy.PROXY.getSide());
                 }
             }
         } catch (Throwable e) {
@@ -59,9 +65,9 @@ public class AutoRegister {
     }
 
     @SubscribeEvent
-    public static void registerItems(RegistryEvent.Register<Item> event) {
+    public void registerItems(RegistryEvent.Register<Item> event) {
         try {
-            for (Class<?> clazz : getClassesFromModId(MOD_IDENTIFIER)) {
+            for (Class<?> clazz : classesCache) {
                 Map<Method, AutoRegisterItem> methods = Arrays.stream(clazz.getDeclaredMethods())
                         .filter(m -> m.isAnnotationPresent(AutoRegisterItem.class))
                         .collect(Collectors.toMap((a) -> a, (a) -> a.getAnnotation(AutoRegisterItem.class)));
@@ -72,9 +78,9 @@ public class AutoRegister {
                     item.setRegistryName(id);
 
                     event.getRegistry().register(item);
-                    ITEMS.put(id, item);
+                    LibAutoRegister.ITEMS.put(id, item);
 
-                    LOGGER.info("Registered Item with id: " + id + ", and type: " + item.getName().getString() + " on side: " + FMLLoader.getDist());
+                    LOGGER.info("Registered Item with id: " + id + ", and type: " + item.getName().getString() + " on side: " + Proxy.PROXY.getSide());
                 }
             }
         } catch (Throwable e) {
@@ -83,9 +89,9 @@ public class AutoRegister {
     }
 
     @SubscribeEvent
-    public static void registerTileEntities(RegistryEvent.Register<TileEntityType<?>> event) {
+    public void registerTileEntities(RegistryEvent.Register<TileEntityType<?>> event) {
         try {
-            for (Class<?> clazz : getClassesFromModId(MOD_IDENTIFIER)) {
+            for (Class<?> clazz : classesCache) {
                 Map<Method, AutoRegisterTileEntity> methods = Arrays.stream(clazz.getDeclaredMethods())
                         .filter(m -> m.isAnnotationPresent(AutoRegisterTileEntity.class))
                         .collect(Collectors.toMap((a) -> a, (a) -> a.getAnnotation(AutoRegisterTileEntity.class)));
@@ -102,15 +108,15 @@ public class AutoRegister {
                                     LogUtils.printError(LOGGER, e);
                                     return null;
                                 }
-                            }, AutoRegister.BLOCKS.get(blockId))
+                            }, LibAutoRegister.BLOCKS.get(blockId))
                             .build(null);
 
                     tileEntityType.setRegistryName(id);
 
                     event.getRegistry().register(tileEntityType);
-                    TILE_ENTITIES.put(id, tileEntityType);
+                    LibAutoRegister.TILE_ENTITIES.put(id, tileEntityType);
 
-                    LOGGER.info("Registered TileEntity with id: " + id + ", and type: " + (tileEntityType.getRegistryName() != null ? tileEntityType.getRegistryName().toString() : id) + " on side: " + FMLLoader.getDist());
+                    LOGGER.info("Registered TileEntity with id: " + id + ", and type: " + (tileEntityType.getRegistryName() != null ? tileEntityType.getRegistryName().toString() : id) + " on side: " + Proxy.PROXY.getSide());
                 }
             }
         } catch (Throwable e) {
@@ -119,9 +125,9 @@ public class AutoRegister {
     }
 
     @SubscribeEvent
-    public static void registerEntities(RegistryEvent.Register<EntityType<?>> event) {
+    public void registerEntities(RegistryEvent.Register<EntityType<?>> event) {
         try {
-            for (Class<?> clazz : getClassesFromModId(MOD_IDENTIFIER)) {
+            for (Class<?> clazz : classesCache) {
                 Map<Method, AutoRegisterEntity> methods = Arrays.stream(clazz.getDeclaredMethods())
                         .filter(m -> m.isAnnotationPresent(AutoRegisterEntity.class))
                         .collect(Collectors.toMap((a) -> a, (a) -> a.getAnnotation(AutoRegisterEntity.class)));
@@ -130,13 +136,13 @@ public class AutoRegister {
                     String id = entry.getValue().id();
 
                     EntityType.Builder<?> builder = (EntityType.Builder<?>) entry.getKey().invoke(clazz);
-                    EntityType<?> entityType = builder.build(MOD_IDENTIFIER + ":" + id);
+                    EntityType<?> entityType = builder.build(MOD_ID + ":" + id);
                     entityType.setRegistryName(id);
 
                     event.getRegistry().register(entityType);
-                    ENTITIES.put(id, entityType);
+                    LibAutoRegister.ENTITIES.put(id, entityType);
 
-                    LOGGER.info("Registered Entity with id: " + id + ", and type: " + entityType.getName().getString() + " on side: " + FMLLoader.getDist());
+                    LOGGER.info("Registered Entity with id: " + id + ", and type: " + entityType.getName().getString() + " on side: " + Proxy.PROXY.getSide());
                 }
             }
         } catch (Throwable e) {
@@ -144,33 +150,27 @@ public class AutoRegister {
         }
     }
 
-    private static List<Class<?>> getClassesFromModId(String modId) {
-        List<Class<?>> classes = new ArrayList<>();
+    @SubscribeEvent
+    public void registerContainer(RegistryEvent.Register<ContainerType<?>> event) {
         try {
-            ModFileInfo modFileInfo;
-            if ((modFileInfo = FMLLoader.getLoadingModList().getModFileById(modId)) != null) {
-                ModFile file;
-                if ((file = modFileInfo.getFile()) != null) {
-                    ArrayList<ModFileScanData.ClassData> classDatas = new ArrayList<>(file.getScanResult().getClasses());
-                    for (ModFileScanData.ClassData classData : classDatas) {
-                        try {
-                            Field fieldClazz = ModFileScanData.ClassData.class.getDeclaredField("clazz");
-                            fieldClazz.setAccessible(true);
-                            Type typeClazz = (Type) fieldClazz.get(classData);
-                            Class<?> aClass = Class.forName(typeClazz.getClassName());
-                            classes.add(aClass);
-                        } catch (Throwable e) {
-                            LogUtils.printError(LOGGER, e);
-                        }
-                    }
+            for (Class<?> clazz : classesCache) {
+                Map<Method, AutoRegisterContainer> methods = Arrays.stream(clazz.getDeclaredMethods())
+                        .filter(m -> m.isAnnotationPresent(AutoRegisterContainer.class))
+                        .collect(Collectors.toMap((a) -> a, (a) -> a.getAnnotation(AutoRegisterContainer.class)));
+
+                for (Map.Entry<Method, AutoRegisterContainer> entry : methods.entrySet()) {
+                    String id = entry.getValue().id();
+                    ContainerType<?> containerType = (ContainerType<?>) entry.getKey().invoke(clazz);
+                    containerType.setRegistryName(id);
+
+                    event.getRegistry().register(containerType);
+                    LibAutoRegister.CONTAINERS.put(id, containerType);
+
+                    LOGGER.info("Registered Container with id: " + id + ", and type: " + containerType.getRegistryName() + " on side: " + Proxy.PROXY.getSide());
                 }
             }
-
-            return classes;
-
         } catch (Throwable e) {
             LogUtils.printError(LOGGER, e);
-            return classes;
         }
     }
 }

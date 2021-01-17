@@ -1,7 +1,7 @@
 package mc.scarecrow.common.entity;
 
 import com.mojang.authlib.GameProfile;
-import mc.scarecrow.lib.register.AutoRegister;
+import mc.scarecrow.lib.register.LibAutoRegister;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntitySize;
 import net.minecraft.entity.EntityType;
@@ -54,6 +54,7 @@ public class ScarecrowPlayerEntity extends FakePlayer {
         player.preventEntitySpawning = false;
         world.getPlayers().add(player);
         player.setGameType(GameType.SURVIVAL);
+        world.getChunk(pos).addEntity(player);
 
         return player;
     }
@@ -114,7 +115,7 @@ public class ScarecrowPlayerEntity extends FakePlayer {
 
     @Override
     public EntityType<?> getType() {
-        return AutoRegister.ENTITIES.get("fake_player");
+        return LibAutoRegister.ENTITIES.get("fake_player");
     }
 
     @Override

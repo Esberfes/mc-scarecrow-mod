@@ -13,4 +13,9 @@ public interface ScarecrowScreenConstants {
     int NUMBER_COLUMNS = 9;
     int NUMBER_ROWS = 3;
     int FLAME_HEIGHT = 14;
+
+    int BUTTON_ON_BOX_Y_OFFSET = 14;
+    int BUTTON_OFF_BOX_Y_OFFSET = 23;
+    int BUTTON_SIZE_X = 9;
+    int BUTTON_SIZE_Y = 9;
 }

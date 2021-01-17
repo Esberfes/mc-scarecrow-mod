@@ -1,7 +1,7 @@
 package mc.scarecrow.common.block.container;
 
 import mc.scarecrow.common.block.tile.ScarecrowTile;
-import mc.scarecrow.lib.register.AutoRegister;
+import mc.scarecrow.lib.register.LibAutoRegister;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.IInventory;
@@ -15,7 +15,6 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import net.minecraftforge.items.wrapper.InvWrapper;
 
-import static mc.scarecrow.common.init.events.ContainersRegisterEventHandler.CONTAINER_TYPE;
 import static mc.scarecrow.constant.ScarecrowBlockConstants.INVENTORY_SIZE;
 import static mc.scarecrow.constant.ScarecrowScreenConstants.*;
 
@@ -25,7 +24,7 @@ public class ScarecrowContainer extends Container {
     private final IItemHandler playerInventory;
 
     public ScarecrowContainer(int id, World world, BlockPos pos, PlayerInventory playerInventory, PlayerEntity entity) {
-        super(CONTAINER_TYPE, id);
+        super(LibAutoRegister.CONTAINERS.get("scarecrow_block"), id);
         this.world = world;
         scarecrowTile = (ScarecrowTile) world.getTileEntity(pos);
         this.playerInventory = new InvWrapper(playerInventory);
@@ -93,7 +92,7 @@ public class ScarecrowContainer extends Container {
 
     @Override
     public boolean canInteractWith(PlayerEntity playerIn) {
-        return isWithinUsableDistance(IWorldPosCallable.of(world, scarecrowTile.getPos()), playerIn, AutoRegister.BLOCKS.get("scarecrow_block"));
+        return isWithinUsableDistance(IWorldPosCallable.of(world, scarecrowTile.getPos()), playerIn, LibAutoRegister.BLOCKS.get("scarecrow_block"));
     }
 
     public ScarecrowTile getScarecrowTile() {

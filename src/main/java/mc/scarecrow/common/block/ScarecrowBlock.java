@@ -4,9 +4,9 @@ import mc.scarecrow.client.init.ClientRegistryHandler;
 import mc.scarecrow.common.block.tile.ScarecrowTile;
 import mc.scarecrow.common.capability.ScarecrowCapabilities;
 import mc.scarecrow.common.entity.ScarecrowPlayerEntity;
-import mc.scarecrow.lib.register.AutoRegister;
+import mc.scarecrow.lib.register.LibAutoRegister;
 import mc.scarecrow.lib.utils.LogUtils;
-import mc.scarecrow.lib.utils.TileUtils;
+import mc.scarecrow.lib.utils.TaskUtils;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
@@ -77,7 +77,7 @@ public class ScarecrowBlock extends Block {
         if (!dropsOriginal.isEmpty())
             return dropsOriginal;
 
-        return Collections.singletonList(new ItemStack(AutoRegister.ITEMS.get("scarecrow_block"), 1));
+        return Collections.singletonList(new ItemStack(LibAutoRegister.ITEMS.get("scarecrow_block"), 1));
     }
 
     @Override
@@ -109,7 +109,7 @@ public class ScarecrowBlock extends Block {
     @Override
     public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
         try {
-            TileUtils.executeIfTileOnServer(worldIn, pos, ScarecrowTile.class,
+            TaskUtils.executeIfTileOnServer(worldIn, pos, ScarecrowTile.class,
                     tile -> NetworkHooks.openGui((ServerPlayerEntity) player, tile, pos));
 
             return ActionResultType.func_233537_a_(worldIn.isRemote());
@@ -123,7 +123,7 @@ public class ScarecrowBlock extends Block {
     @Override
     public void onBlockPlacedBy(World worldIn, BlockPos pos, BlockState state, LivingEntity placer, ItemStack stack) {
         try {
-            TileUtils.executeIfTileOnServer(worldIn, pos, ScarecrowTile.class, scarecrowTile -> {
+            TaskUtils.executeIfTileOnServer(worldIn, pos, ScarecrowTile.class, scarecrowTile -> {
                 worldIn.getCapability(ScarecrowCapabilities.CHUNK_CAPABILITY).ifPresent(tracker -> {
                     ChunkPos chunkPos = worldIn.getChunk(pos).getPos();
                     tracker.add(chunkPos, pos);
@@ -137,13 +137,13 @@ public class ScarecrowBlock extends Block {
 
     @Override
     public boolean isReplaceable(BlockState state, BlockItemUseContext useContext) {
-        return true;
+        return false;
     }
 
     @Override
     public void onReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean isMoving) {
         if (state.getBlock() != newState.getBlock()) {
-            TileUtils.executeIfTileOnServer(world, pos, ScarecrowTile.class, scarecrowTile -> {
+            TaskUtils.executeIfTileOnServer(world, pos, ScarecrowTile.class, scarecrowTile -> {
                 InventoryHelper.dropInventoryItems(world, pos, scarecrowTile);
                 world.updateComparatorOutputLevel(pos, state.getBlock());
                 onRemovedFromWorld(world, pos);
@@ -167,7 +167,7 @@ public class ScarecrowBlock extends Block {
      */
     private void onRemovedFromWorld(World worldIn, BlockPos pos) {
         try {
-            TileUtils.executeIfTileOnServer(worldIn, pos, ScarecrowTile.class, scarecrowTile -> {
+            TaskUtils.executeIfTileOnServer(worldIn, pos, ScarecrowTile.class, scarecrowTile -> {
                 // Remove from capabilities
                 worldIn.getCapability(ScarecrowCapabilities.CHUNK_CAPABILITY).ifPresent(tracker -> {
                     ChunkPos chunkPos = worldIn.getChunk(pos).getPos();
@@ -185,7 +185,7 @@ public class ScarecrowBlock extends Block {
     @Override
     public void animateTick(BlockState state, World world, BlockPos pos, Random random) {
         super.animateTick(state, world, pos, random);
-        TileUtils.executeIfTileOnClient(world, pos, ScarecrowTile.class, (t) -> {
+        TaskUtils.executeIfTileOnClient(world, pos, ScarecrowTile.class, (t) -> {
             if (t.isActive() && random.nextBoolean()) {
                 for (int i = 0; i < 2; i++) {
                     double xOrigin = pos.getX() + 0.5;

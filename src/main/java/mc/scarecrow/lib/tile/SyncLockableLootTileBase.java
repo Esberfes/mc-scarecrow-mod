@@ -2,10 +2,12 @@ package mc.scarecrow.lib.tile;
 
 import com.google.gson.Gson;
 import mc.scarecrow.common.block.ScarecrowBlock;
+import mc.scarecrow.lib.proxy.Proxy;
 import mc.scarecrow.lib.utils.LogUtils;
-import mc.scarecrow.lib.utils.TileUtils;
+import mc.scarecrow.lib.utils.TaskUtils;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.ItemStackHelper;
@@ -32,7 +34,7 @@ public abstract class SyncLockableLootTileBase<PojoType> extends LockableLootTil
     private int numPlayersUsing;
     protected AtomicLong serverTicks;
     protected AtomicLong clientTicks;
-    private int chestSize;
+    private final int chestSize;
 
     protected SyncLockableLootTileBase(TileEntityType<?> tileType, int chestSize) {
         super(tileType);
@@ -108,13 +110,17 @@ public abstract class SyncLockableLootTileBase<PojoType> extends LockableLootTil
     @Override
     public void tick() {
         // Tick on server side
-        TileUtils.executeIfTileOnServer(world, pos, getSubClass(), syncLockableLootTileBase -> onTickServer((ServerWorld) world, serverTicks.getAndIncrement()));
+        TaskUtils.executeIfTileOnServer(world, pos, getSubClass(), syncLockableLootTileBase
+                -> onTickServer((ServerWorld) world, serverTicks.getAndIncrement()));
+
         // Tick on client side
-        TileUtils.executeIfTileOnClient(world, pos, getSubClass(), syncLockableLootTileBase -> onTickClient((ClientWorld) world, clientTicks.getAndIncrement()));
+        TaskUtils.executeIfTileOnClient(world, pos, getSubClass(), syncLockableLootTileBase
+                -> onTickClient((ClientWorld) world, Proxy.PROXY.getPlayerEntity(), clientTicks.getAndIncrement()));
     }
 
     @Override
-    public void onTickClient(ClientWorld world, long clientTicks) {
+    public void onTickClient(ClientWorld world, ClientPlayerEntity clientPlayerEntity, long clientTicks) {
+
     }
 
     @Override

@@ -90,6 +90,8 @@ minecraft {
 }
 
 repositories {
+    mavenCentral()
+    jcenter()
     maven {
         name = "TehNut's Maven (HWYLA)"
         url "https://maven.tehnut.info/"
@@ -123,13 +125,12 @@ dependencies {
     // For more info...
     // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
-    implementation 'com.google.code.gson:gson:2.8.6'
+    shadow 'com.google.code.gson:gson:2.8.6'
     // Compile against the Hwyla API, but do not include it at runtime
     // compileOnly fg.deobf("mcp.mobius.waila:Hwyla:1.10.11>:api")
     // At runtime, use the full Hwyla jar
 //    compile fg.deobf("mcp.mobius.waila:Hwyla:1.10.11-B78_1.16.2")
     shadow "mcp.mobius.waila:Hwyla:1.10.11-B78_1.16.2:api"
-
 }
 
 
@@ -137,6 +138,7 @@ shadowJar {
     archiveName = tasks.jar.archiveName
     configurations = [project.configurations.shadow]
     relocate 'mcp.mobius.waila', 'mc.scarecrow.api.mcp.mobius.waila'
+    relocate 'com.google.gson', 'mc.scarecrow.api.com.google.gson'
 }
 
 // Example for how to get properties into the manifest for reading by the runtime..

@@ -3,13 +3,15 @@ package mc.scarecrow.common.block.tile;
 import mc.scarecrow.common.block.container.ScarecrowContainer;
 import mc.scarecrow.common.capability.pojo.ScarecrowTilePojo;
 import mc.scarecrow.common.entity.ScarecrowPlayerEntity;
-import mc.scarecrow.lib.register.AutoRegister;
+import mc.scarecrow.lib.register.LibAutoRegister;
 import mc.scarecrow.lib.tile.SyncLockableLootTileBase;
 import mc.scarecrow.lib.utils.LogUtils;
-import mc.scarecrow.lib.utils.TileUtils;
+import mc.scarecrow.lib.utils.TaskUtils;
 import mcp.mobius.waila.api.IComponentProvider;
 import mcp.mobius.waila.api.IDataAccessor;
 import mcp.mobius.waila.api.IPluginConfig;
+import net.minecraft.client.entity.player.ClientPlayerEntity;
+import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.container.Container;
@@ -35,8 +37,7 @@ public class ScarecrowTile extends SyncLockableLootTileBase<ScarecrowTilePojo> i
     private UUID closestPlayer;
 
     public ScarecrowTile() {
-        super(AutoRegister.TILE_ENTITIES.get("scarecrow_block"), INVENTORY_SIZE);
-
+        super(LibAutoRegister.TILE_ENTITIES.get("scarecrow_block"), INVENTORY_SIZE);
         fuelManager = new ScarecrowTileFuelManger(this::getItems);
         taskInProgress = new AtomicBoolean();
         taskInProgress.set(false);
@@ -60,6 +61,10 @@ public class ScarecrowTile extends SyncLockableLootTileBase<ScarecrowTilePojo> i
 
     public int getCurrentBurnTime() {
         return this.fuelManager.getCurrentBurningTime();
+    }
+
+    public void toggle() {
+        this.fuelManager.toggle();
     }
 
     public UUID getOwner() {
@@ -125,6 +130,11 @@ public class ScarecrowTile extends SyncLockableLootTileBase<ScarecrowTilePojo> i
     }
 
     @Override
+    public void onTickClient(ClientWorld world, ClientPlayerEntity clientPlayerEntity, long clientTicks) {
+        super.onTickClient(world, clientPlayerEntity, clientTicks);
+    }
+
+    @Override
     protected Class<ScarecrowTilePojo> getPojoClass() {
         return ScarecrowTilePojo.class;
     }
@@ -179,7 +189,7 @@ public class ScarecrowTile extends SyncLockableLootTileBase<ScarecrowTilePojo> i
 
     @Override
     public void appendTail(List<ITextComponent> info, IDataAccessor accessor, IPluginConfig config) {
-        TileUtils.executeIfTile(accessor.getWorld(), accessor.getPosition(), ScarecrowTile.class, tile -> {
+        TaskUtils.executeIfTile(accessor.getWorld(), accessor.getPosition(), ScarecrowTile.class, tile -> {
             info.add(new StringTextComponent("Active: " + (tile.isActive() ? "yes" : "no")));
             info.add(new StringTextComponent("Pause: " + (tile.isPaused() ? "yes" : "no")));
             info.add(new StringTextComponent("Fuel: " + ticksToTime(tile.getTotalFuel())));
