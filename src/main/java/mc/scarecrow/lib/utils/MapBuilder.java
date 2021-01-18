@@ -1,6 +1,6 @@
 package mc.scarecrow.lib.utils;
 
-import mc.scarecrow.lib.register.libinitializer.ILibElement;
+import mc.scarecrow.lib.core.libinitializer.ILibElement;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

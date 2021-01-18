@@ -23,7 +23,7 @@ public class ScarecrowContainer extends Container {
     private final ScarecrowTile scarecrowTile;
     private final IItemHandler playerInventory;
 
-    public ScarecrowContainer(int id, World world, BlockPos pos, PlayerInventory playerInventory, PlayerEntity entity) {
+    public ScarecrowContainer(int id, World world, BlockPos pos, PlayerInventory playerInventory) {
         super(LibAutoRegister.CONTAINERS.get("scarecrow_block"), id);
         this.world = world;
         scarecrowTile = (ScarecrowTile) world.getTileEntity(pos);

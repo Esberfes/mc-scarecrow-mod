@@ -1,4 +1,4 @@
-package mc.scarecrow.lib.register.libinitializer;
+package mc.scarecrow.lib.core.libinitializer;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

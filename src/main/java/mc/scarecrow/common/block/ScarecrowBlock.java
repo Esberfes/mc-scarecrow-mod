@@ -46,6 +46,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
+@SuppressWarnings("deprecation")
 public class ScarecrowBlock extends Block {
 
     private static final Logger LOGGER = LogManager.getLogger();
@@ -60,8 +61,7 @@ public class ScarecrowBlock extends Block {
                 .harvestLevel(1)
                 .harvestTool(ToolType.PICKAXE));
 
-        setDefaultState(getStateContainer().getBaseState()
-                .with(FACING, Direction.NORTH)
+        setDefaultState(getStateContainer().getBaseState().with(FACING, Direction.NORTH)
         );
     }
 

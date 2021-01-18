@@ -6,6 +6,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.logging.log4j.Logger;
 
 public abstract class LogUtils {
+
     private static Gson gson = new GsonBuilder().setPrettyPrinting().serializeNulls().create();
 
     public static void debug(Logger logger, Object e) {

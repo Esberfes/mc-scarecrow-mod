@@ -50,7 +50,7 @@ public class CommonRegistryHandler {
     public static ContainerType<?> registerScarecrowContainer() {
         return IForgeContainerType.create((windowId, inv, data) -> {
             BlockPos pos = data.readBlockPos();
-            return new ScarecrowContainer(windowId, PROXY.getPlayerWorld(), pos, inv, PROXY.getPlayerEntity());
+            return new ScarecrowContainer(windowId, PROXY.getPlayerWorld(), pos, inv);
         });
     }
 }

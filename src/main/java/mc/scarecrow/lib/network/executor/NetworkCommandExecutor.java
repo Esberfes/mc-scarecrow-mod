@@ -1,12 +1,12 @@
 package mc.scarecrow.lib.network.executor;
 
+import mc.scarecrow.lib.core.libinitializer.ILibElement;
+import mc.scarecrow.lib.core.libinitializer.LibElement;
+import mc.scarecrow.lib.core.libinitializer.LibInject;
+import mc.scarecrow.lib.core.libinitializer.OnRegisterManuallyListener;
 import mc.scarecrow.lib.network.channel.NetworkChannel;
 import mc.scarecrow.lib.network.commandhandler.INetworkCommandHandler;
 import mc.scarecrow.lib.network.commandhandler.NetworkCommandHandler;
-import mc.scarecrow.lib.register.libinitializer.ILibElement;
-import mc.scarecrow.lib.register.libinitializer.LibElement;
-import mc.scarecrow.lib.register.libinitializer.LibInject;
-import mc.scarecrow.lib.register.libinitializer.OnRegisterManuallyListener;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
@@ -60,7 +60,7 @@ public final class NetworkCommandExecutor implements NetworkCommandExecutorListe
     }
 
     @Override
-    public void initialize(String modId, OnRegisterManuallyListener onRegisterManuallyListener, FMLJavaModLoadingContext loadingContext) {
+    public void postConstruct(String modId, OnRegisterManuallyListener onRegisterManuallyListener, FMLJavaModLoadingContext loadingContext) {
         INetworkCommandHandler<NetworkCommand> INetworkCommandHandler
                 = new NetworkCommandHandler(this);
 

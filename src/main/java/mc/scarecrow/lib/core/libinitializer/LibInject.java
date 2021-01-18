@@ -1,4 +1,4 @@
-package mc.scarecrow.lib.register.libinitializer;
+package mc.scarecrow.lib.core.libinitializer;
 
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 

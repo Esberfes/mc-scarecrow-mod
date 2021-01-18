@@ -28,7 +28,8 @@ public class ScarecrowMod implements IWailaPlugin {
     public static final IProxy PROXY = DistExecutor.safeRunForDist(() -> ClientProxy::new, () -> ServerProxy::new);
 
     public ScarecrowMod() {
-        LOGGER.debug("Initializing registry");
+        LOGGER.debug("Initializing Scarecrow Mod");
+
         final IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
         LibCore.initialize(FMLJavaModLoadingContext.get(), MOD_IDENTIFIER);
@@ -36,8 +37,6 @@ public class ScarecrowMod implements IWailaPlugin {
         modEventBus.addListener(this::onCommonSetup);
 
         ClientRegistryHandler.init();
-
-        LOGGER.debug("Finishing registry");
     }
 
     private void onCommonSetup(final FMLCommonSetupEvent event) {
@@ -50,6 +49,7 @@ public class ScarecrowMod implements IWailaPlugin {
 
     @Override
     public void register(IRegistrar iRegistrar) {
-        iRegistrar.registerComponentProvider((IComponentProvider) LibAutoRegister.TILE_ENTITIES.get("scarecrow_block").create(), TooltipPosition.TAIL, ScarecrowTile.class);
+        iRegistrar.registerComponentProvider((IComponentProvider) LibAutoRegister.TILE_ENTITIES.get("scarecrow_block").create(),
+                TooltipPosition.TAIL, ScarecrowTile.class);
     }
 }

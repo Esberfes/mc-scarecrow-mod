@@ -19,8 +19,6 @@ import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.GameType;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.util.FakePlayer;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,21 +27,16 @@ import java.util.UUID;
 
 public class ScarecrowPlayerEntity extends FakePlayer {
 
-    private static final Logger LOGGER = LogManager.getLogger();
-
-    private ServerWorld world;
-    private GameProfile profile;
+    private final GameProfile profile;
     private Vector3d positionVec;
     private BlockPos position;
-    private long tick;
 
     private ScarecrowPlayerEntity(ServerWorld world, GameProfile profile) {
         super(world, profile);
-        this.world = world;
         this.profile = profile;
     }
 
-    private static List<ScarecrowPlayerEntity> playerEntityList = new ArrayList<>();
+    private static final List<ScarecrowPlayerEntity> playerEntityList = new ArrayList<>();
 
     public static synchronized ScarecrowPlayerEntity create(ServerWorld world, BlockPos pos, UUID uuid) {
         GameProfile profile = uuid == null ? new GameProfile(UUID.randomUUID(), UUID.randomUUID().toString()) : new GameProfile(uuid, uuid.toString());

@@ -49,10 +49,6 @@ public class ScarecrowChunkCapability implements Capability.IStorage<ScarecrowCh
         }
     }
 
-    public synchronized void remove(ChunkPos key) {
-        this.chunksBlocks.remove(key);
-    }
-
     public synchronized void remove(ChunkPos chunk, BlockPos pos) {
         try {
             if (!this.chunksBlocks.containsKey(chunk) || !this.chunksBlocks.get(chunk).contains(pos))
@@ -74,10 +70,6 @@ public class ScarecrowChunkCapability implements Capability.IStorage<ScarecrowCh
 
     public synchronized Map<ChunkPos, List<BlockPos>> getAll() {
         return new HashMap<>(chunksBlocks);
-    }
-
-    public synchronized void removeAll() {
-        this.chunksBlocks.clear();
     }
 
     public ServerWorld getWorld() {
@@ -114,7 +106,8 @@ public class ScarecrowChunkCapability implements Capability.IStorage<ScarecrowCh
                 CompoundNBT chunkTag = ((CompoundNBT) nbt).getCompound(key);
                 ChunkPos chunk = new ChunkPos(chunkTag.getLong("chunk"));
                 LongArrayNBT blocks = (LongArrayNBT) chunkTag.get("blocks");
-                Arrays.stream(blocks.getAsLongArray()).mapToObj(BlockPos::fromLong).forEach(pos -> instance.add(chunk, pos));
+                if (blocks != null)
+                    Arrays.stream(blocks.getAsLongArray()).mapToObj(BlockPos::fromLong).forEach(pos -> instance.add(chunk, pos));
             }
         } catch (Throwable e) {
             LogUtils.printError(LOGGER, e);

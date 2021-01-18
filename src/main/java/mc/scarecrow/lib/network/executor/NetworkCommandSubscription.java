@@ -1,6 +1,6 @@
 package mc.scarecrow.lib.network.executor;
 
-import mc.scarecrow.lib.register.libinitializer.LibInject;
+import mc.scarecrow.lib.core.libinitializer.LibInject;
 import net.minecraft.entity.player.ServerPlayerEntity;
 
 import java.util.UUID;
@@ -15,11 +15,11 @@ public final class NetworkCommandSubscription {
 
     private NetworkCommandSubscription(BiConsumer<ServerPlayerEntity, NetworkCommand> consumer) {
         this.id = UUID.randomUUID().toString();
-        this.commandExecutor.subscribe(id, consumer);
+        commandExecutor.subscribe(id, consumer);
     }
 
     public void execute(NetworkCommand networkCommand) {
-        this.commandExecutor.sendToServer(networkCommand);
+        commandExecutor.sendToServer(networkCommand);
     }
 
     public NetworkCommandBuilder commandBuilder() {

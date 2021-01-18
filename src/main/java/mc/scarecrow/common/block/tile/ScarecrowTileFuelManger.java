@@ -93,8 +93,8 @@ public class ScarecrowTileFuelManger {
         this.inPause.set(inPause);
     }
 
-    public synchronized boolean toggle() {
-        return !this.inPause.getAndSet(!this.inPause.get());
+    public synchronized void toggle() {
+        this.inPause.getAndSet(!this.inPause.get());
     }
 
     public synchronized void setCurrentBurningTime(int currentBurningTime) {

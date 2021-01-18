@@ -9,6 +9,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.IHasContainer;
 import net.minecraft.client.gui.screen.inventory.ContainerScreen;
 import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.inventory.container.Container;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
@@ -19,18 +20,23 @@ import org.apache.logging.log4j.Logger;
 import static mc.scarecrow.constant.ScarecrowModConstants.MOD_IDENTIFIER;
 import static mc.scarecrow.constant.ScarecrowScreenConstants.*;
 
+@SuppressWarnings("deprecation")
 @OnlyIn(Dist.CLIENT)
-public class ScarecrowScreen extends ContainerScreen<ScarecrowContainer> implements IHasContainer<ScarecrowContainer> {
+public class ScarecrowScreen extends ContainerScreen<Container> implements IHasContainer<Container> {
 
     private static final Logger LOGGER = LogManager.getLogger();
-
-    private final ResourceLocation GUI = new ResourceLocation(MOD_IDENTIFIER, "textures/screens/scarecrow_screen.png");
+    public static final ResourceLocation GUI = new ResourceLocation(MOD_IDENTIFIER, "textures/screens/scarecrow_screen.png");
 
     private final int spriteXSize;
     private final int spriteYSize;
     private final ScarecrowTile tile;
 
-    public ScarecrowScreen(ScarecrowContainer screenContainer, PlayerInventory inv, ITextComponent titleIn) {
+    private int centeredGuiX;
+    private int centeredGuiY;
+
+    private ScarecrowScreenEnableButton scarecrowScreenEnableButton;
+
+    public ScarecrowScreen(Container screenContainer, PlayerInventory inv, ITextComponent titleIn) {
         super(screenContainer, inv, titleIn);
         this.xSize = INVENTORY_SCREEN_SIZE_X;
         this.ySize = INVENTORY_SCREEN_SIZE_Y;
@@ -38,17 +44,28 @@ public class ScarecrowScreen extends ContainerScreen<ScarecrowContainer> impleme
         this.spriteYSize = SPRITE_TEXTURE_SIZE_Y;
         this.passEvents = false;
 
-        this.tile = screenContainer.getScarecrowTile();
+        if (!(screenContainer instanceof ScarecrowContainer))
+            throw new IllegalArgumentException("Invalid type, should be instance of ScarecrowContainer");
 
-        setScreenText();
+        this.tile = ((ScarecrowContainer) screenContainer).getScarecrowTile();
     }
 
-    private void setScreenText() {
+    @Override
+    public void init(Minecraft minecraft, int width, int height) {
+        super.init(minecraft, width, height);
+
+        this.centeredGuiX = (width - this.xSize) / 2;
+        this.centeredGuiY = (height - this.ySize) / 2;
+
         this.titleX = X_OFFSET_GRID;
         this.titleY = 6;
 
         this.playerInventoryTitleX = X_OFFSET_GRID;
         this.playerInventoryTitleY = this.ySize - 96 + 1;
+
+        this.scarecrowScreenEnableButton
+                = new ScarecrowScreenEnableButton(this.centeredGuiX + 160, this.centeredGuiY + 70, tile.getPos());
+        this.addButton(scarecrowScreenEnableButton);
     }
 
     @Override
@@ -56,19 +73,18 @@ public class ScarecrowScreen extends ContainerScreen<ScarecrowContainer> impleme
         try {
             // Main screen print
             RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
-            int x = (this.width - this.xSize) / 2;
-            int y = (this.height - this.ySize) / 2;
-
             Minecraft.getInstance().getTextureManager().bindTexture(GUI);
-            blit(matrixStack, x, y, 0, 0, this.xSize, this.ySize, this.spriteXSize, this.spriteYSize);
+            blit(matrixStack, this.centeredGuiX, this.centeredGuiY, 0, 0, this.xSize, this.ySize, this.spriteXSize, this.spriteYSize);
+
+            this.scarecrowScreenEnableButton.setActive(this.tile.isActive());
 
             // Flame handle
             if (this.tile.isActive()) {
                 int flamePixelsLeft = getBurnLeftScaled();
                 int flameOffset = FLAME_HEIGHT - flamePixelsLeft;
                 blit(matrixStack,
-                        x + 81,
-                        y + 47 + flameOffset,
+                        this.centeredGuiX + 81,
+                        this.centeredGuiY + 47 + flameOffset,
                         this.xSize,
                         flameOffset,
                         14,

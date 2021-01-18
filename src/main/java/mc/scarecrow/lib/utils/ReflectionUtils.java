@@ -1,8 +1,8 @@
 package mc.scarecrow.lib.utils;
 
-import mc.scarecrow.lib.register.libinitializer.ILibElement;
-import mc.scarecrow.lib.register.libinitializer.LibElement;
-import mc.scarecrow.lib.register.libinitializer.LibInject;
+import mc.scarecrow.lib.core.libinitializer.ILibElement;
+import mc.scarecrow.lib.core.libinitializer.LibElement;
+import mc.scarecrow.lib.core.libinitializer.LibInject;
 import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.fml.loading.moddiscovery.ModFile;
 import net.minecraftforge.fml.loading.moddiscovery.ModFileInfo;
@@ -106,7 +106,7 @@ public abstract class ReflectionUtils {
                 && hasParameterlessConstructor(clazz);
     }
 
-    public static Class<?> isCircularInjectionReference(List<Class<? extends ILibElement>> classes) {
+    public static void warnCircularInjectionReference(List<Class<? extends ILibElement>> classes) {
         for (Class<? extends ILibElement> clazz : classes) {
             // cojo mis dependencias
             List<Class<?>> dependencies = new ArrayList<>(getFieldsAnnotatedTypes(clazz, LibInject.class));
@@ -114,10 +114,9 @@ public abstract class ReflectionUtils {
             for (Class<?> clazzOther : dependencies) {
                 List<Class<?>> otherDependencies = new ArrayList<>(getFieldsAnnotatedTypes(clazzOther, LibInject.class));
                 if (otherDependencies.contains(clazz))
-                    return clazz;
+                    LOGGER.warn("Circular dependency found: " + clazz.getSimpleName());
             }
         }
-        return null;
     }
 
     public static List<Method> getMethodsAnnotated(List<Class<?>> classes, Class<? extends Annotation> annotation) {

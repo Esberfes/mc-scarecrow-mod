@@ -11,5 +11,4 @@ public interface INetworkCommandHandler<T> {
     T decodeMessage(PacketBuffer packetBuffer);
 
     void encodeMessage(T networkCommand, PacketBuffer packetBuffer);
-
 }

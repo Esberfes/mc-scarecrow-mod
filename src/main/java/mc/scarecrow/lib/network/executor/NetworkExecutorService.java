@@ -1,9 +1,9 @@
 package mc.scarecrow.lib.network.executor;
 
+import mc.scarecrow.lib.core.libinitializer.ILibElement;
+import mc.scarecrow.lib.core.libinitializer.LibElement;
+import mc.scarecrow.lib.core.libinitializer.LibInject;
 import mc.scarecrow.lib.network.channel.NetworkChannel;
-import mc.scarecrow.lib.register.libinitializer.ILibElement;
-import mc.scarecrow.lib.register.libinitializer.LibElement;
-import mc.scarecrow.lib.register.libinitializer.LibInject;
 
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;

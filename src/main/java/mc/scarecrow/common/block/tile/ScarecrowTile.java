@@ -179,7 +179,7 @@ public class ScarecrowTile extends SyncLockableLootTileBase<ScarecrowTilePojo> i
             if (world == null)
                 throw new Exception("World is null on create menu");
 
-            return new ScarecrowContainer(id, world, getPos(), player, entity);
+            return new ScarecrowContainer(id, world, getPos(), player);
 
         } catch (Throwable e) {
             LogUtils.printError(LOGGER, e);
