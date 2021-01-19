@@ -1,5 +1,5 @@
 {
-  "ambientocclusion": true,
+  "ambientocclusion": false,
   "credit": "Made with Blockbench",
   "texture_size": [
     32,

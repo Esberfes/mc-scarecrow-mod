@@ -21,19 +21,19 @@ import static mc.scarecrow.ScarecrowMod.PROXY;
 
 public class CommonRegistryHandler {
 
-    @AutoRegisterTileEntity(id = "scarecrow_block", blockId = "scarecrow_block")
+    @AutoRegisterTileEntity(id = "scarecrow", blockId = "scarecrow")
     public static TileEntity registerTileEntity() {
         return new ScarecrowTile();
     }
 
-    @AutoRegisterItem(id = "scarecrow_block")
+    @AutoRegisterItem(id = "scarecrow")
     public static Item registerItem() {
-        return new BlockItem(LibAutoRegister.BLOCKS.get("scarecrow_block"), new Item.Properties()
+        return new BlockItem(LibAutoRegister.BLOCKS.get("scarecrow"), new Item.Properties()
                 .group(ItemGroup.BUILDING_BLOCKS)
                 .maxStackSize(10));
     }
 
-    @AutoRegisterBlock(id = "scarecrow_block")
+    @AutoRegisterBlock(id = "scarecrow")
     public static Block registerBlock() {
         return new ScarecrowBlock();
     }
@@ -46,7 +46,7 @@ public class CommonRegistryHandler {
                 .size(0, 0);
     }
 
-    @AutoRegisterContainer(id = "scarecrow_block")
+    @AutoRegisterContainer(id = "scarecrow")
     public static ContainerType<?> registerScarecrowContainer() {
         return IForgeContainerType.create((windowId, inv, data) -> {
             BlockPos pos = data.readBlockPos();

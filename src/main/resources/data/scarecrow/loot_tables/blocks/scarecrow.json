@@ -2,12 +2,12 @@
   "type": "minecraft:block",
   "pools": [
     {
-      "name": "scarecrow_block",
+      "name": "scarecrow",
       "rolls": 1,
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "scarecrow:scarecrow_block"
+          "name": "scarecrow:scarecrow"
         }
       ],
       "conditions": [

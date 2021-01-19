@@ -77,7 +77,7 @@ public class ScarecrowBlock extends Block {
         if (!dropsOriginal.isEmpty())
             return dropsOriginal;
 
-        return Collections.singletonList(new ItemStack(LibAutoRegister.ITEMS.get("scarecrow_block"), 1));
+        return Collections.singletonList(new ItemStack(LibAutoRegister.ITEMS.get("scarecrow"), 1));
     }
 
     @Override

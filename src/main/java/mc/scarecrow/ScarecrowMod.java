@@ -49,7 +49,7 @@ public class ScarecrowMod implements IWailaPlugin {
 
     @Override
     public void register(IRegistrar iRegistrar) {
-        iRegistrar.registerComponentProvider((IComponentProvider) LibAutoRegister.TILE_ENTITIES.get("scarecrow_block").create(),
+        iRegistrar.registerComponentProvider((IComponentProvider) LibAutoRegister.TILE_ENTITIES.get("scarecrow").create(),
                 TooltipPosition.TAIL, ScarecrowTile.class);
     }
 }

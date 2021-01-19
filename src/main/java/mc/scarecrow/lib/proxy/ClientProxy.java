@@ -18,12 +18,12 @@ public class ClientProxy implements IProxy {
     @Override
     public void init() {
         // Register on client the screen for the container
-        ScreenManager.registerFactory(LibAutoRegister.CONTAINERS.get("scarecrow_block"),
+        ScreenManager.registerFactory(LibAutoRegister.CONTAINERS.get("scarecrow"),
                 (ScreenManager.IScreenFactory<Container, ContainerScreen<Container>>) ScarecrowScreen::new);
 
         // Register on client the scarecrow tile renderer
-        ClientRegistry.bindTileEntityRenderer((TileEntityType<? extends TileEntity>) LibAutoRegister.TILE_ENTITIES.get("scarecrow_block"),
-                o -> new ScarecrowTileRenderer(o, LibAutoRegister.BLOCKS.get("scarecrow_block")));
+        ClientRegistry.bindTileEntityRenderer((TileEntityType<? extends TileEntity>) LibAutoRegister.TILE_ENTITIES.get("scarecrow"),
+                o -> new ScarecrowTileRenderer(o, LibAutoRegister.BLOCKS.get("scarecrow")));
     }
 
     @Override

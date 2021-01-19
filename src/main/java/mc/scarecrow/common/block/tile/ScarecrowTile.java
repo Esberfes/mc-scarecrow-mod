@@ -1,6 +1,7 @@
 package mc.scarecrow.common.block.tile;
 
 import mc.scarecrow.common.block.container.ScarecrowContainer;
+import mc.scarecrow.common.capability.ScarecrowCapabilities;
 import mc.scarecrow.common.capability.pojo.ScarecrowTilePojo;
 import mc.scarecrow.common.entity.ScarecrowPlayerEntity;
 import mc.scarecrow.lib.register.LibAutoRegister;
@@ -16,6 +17,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.world.server.ServerWorld;
@@ -37,7 +39,7 @@ public class ScarecrowTile extends SyncLockableLootTileBase<ScarecrowTilePojo> i
     private UUID closestPlayer;
 
     public ScarecrowTile() {
-        super(LibAutoRegister.TILE_ENTITIES.get("scarecrow_block"), INVENTORY_SIZE);
+        super(LibAutoRegister.TILE_ENTITIES.get("scarecrow"), INVENTORY_SIZE);
         fuelManager = new ScarecrowTileFuelManger(this::getItems);
         taskInProgress = new AtomicBoolean();
         taskInProgress.set(false);
@@ -109,6 +111,13 @@ public class ScarecrowTile extends SyncLockableLootTileBase<ScarecrowTilePojo> i
                     if (!isActive() && fakePlayer != null) {
                         ScarecrowPlayerEntity.remove(fakePlayer, world);
                         fakePlayer = null;
+                    }
+
+                    if (!isActive()) {
+                        world.getCapability(ScarecrowCapabilities.CHUNK_CAPABILITY).ifPresent(tracker -> {
+                            ChunkPos chunkPos = world.getChunk(pos).getPos();
+                            tracker.remove(chunkPos, pos);
+                        });
                     }
 
                     PlayerEntity closestPlayer = world.getClosestPlayer((double) getPos().getX() + 0.5D,

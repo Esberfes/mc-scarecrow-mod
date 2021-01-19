@@ -24,7 +24,7 @@ public class ScarecrowContainer extends Container {
     private final IItemHandler playerInventory;
 
     public ScarecrowContainer(int id, World world, BlockPos pos, PlayerInventory playerInventory) {
-        super(LibAutoRegister.CONTAINERS.get("scarecrow_block"), id);
+        super(LibAutoRegister.CONTAINERS.get("scarecrow"), id);
         this.world = world;
         scarecrowTile = (ScarecrowTile) world.getTileEntity(pos);
         this.playerInventory = new InvWrapper(playerInventory);
@@ -92,7 +92,7 @@ public class ScarecrowContainer extends Container {
 
     @Override
     public boolean canInteractWith(PlayerEntity playerIn) {
-        return isWithinUsableDistance(IWorldPosCallable.of(world, scarecrowTile.getPos()), playerIn, LibAutoRegister.BLOCKS.get("scarecrow_block"));
+        return isWithinUsableDistance(IWorldPosCallable.of(world, scarecrowTile.getPos()), playerIn, LibAutoRegister.BLOCKS.get("scarecrow"));
     }
 
     public ScarecrowTile getScarecrowTile() {

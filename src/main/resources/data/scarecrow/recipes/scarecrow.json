@@ -1,15 +1,18 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    "DBD",
-    "D#D",
-    "###"
+    "PCP",
+    "DCD",
+    "OOO"
   ],
   "key": {
-    "B": {
-      "item": "minecraft:book"
+    "P": {
+      "item": "minecraft:ender_pearl"
     },
-    "#": {
+    "C": {
+      "item": "minecraft:pumpkin"
+    },
+    "O": {
       "item": "minecraft:obsidian"
     },
     "D": {
@@ -17,7 +20,7 @@
     }
   },
   "result": {
-    "item": "scarecrow:scarecrow_block",
+    "item": "scarecrow:scarecrow",
     "count": 1
   }
 }
