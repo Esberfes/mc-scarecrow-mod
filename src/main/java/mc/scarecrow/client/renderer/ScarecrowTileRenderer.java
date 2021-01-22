@@ -4,6 +4,8 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import mc.scarecrow.ScarecrowMod;
 import mc.scarecrow.common.block.ScarecrowBlock;
 import mc.scarecrow.common.block.tile.ScarecrowTile;
+import mc.scarecrow.lib.core.libinitializer.LibInject;
+import mc.scarecrow.lib.tile.LbTileEntityRenderBase;
 import mc.scarecrow.lib.utils.LogUtils;
 import mc.scarecrow.lib.utils.UIUtils;
 import net.minecraft.block.Block;
@@ -14,7 +16,6 @@ import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.RenderTypeLookup;
 import net.minecraft.client.renderer.model.IBakedModel;
-import net.minecraft.client.renderer.tileentity.TileEntityRenderer;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.tileentity.TileEntity;
@@ -23,14 +24,15 @@ import net.minecraft.util.math.vector.Quaternion;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraftforge.client.model.data.EmptyModelData;
 import net.minecraftforge.common.ForgeHooks;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Random;
 
-public class ScarecrowTileRenderer extends TileEntityRenderer<TileEntity> {
+public class ScarecrowTileRenderer extends LbTileEntityRenderBase {
 
-    private static final Logger LOGGER = LogManager.getLogger();
+    @LibInject
+    private Logger logger;
+
     private static final int DELTA_ANGLE = 5;
     private final Block block;
 
@@ -63,7 +65,7 @@ public class ScarecrowTileRenderer extends TileEntityRenderer<TileEntity> {
             matrixStack.rotate(new Quaternion(0, (float) ((ScarecrowTile) tile).getLastYaw(), 0, true));
 
         } catch (Throwable e) {
-            LogUtils.printError(LOGGER, e);
+            LogUtils.printError(logger, e);
         } finally {
             matrixStack.translate(-0.5, -0.5, -0.5);
             for (RenderType type : RenderType.getBlockRenderTypes()) {

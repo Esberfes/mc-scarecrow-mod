@@ -1,5 +1,7 @@
 package mc.scarecrow.lib.register;
 
+import mc.scarecrow.lib.core.LibInstanceHandler;
+import mc.scarecrow.lib.core.libinitializer.LibInject;
 import mc.scarecrow.lib.proxy.Proxy;
 import mc.scarecrow.lib.register.annotation.*;
 import mc.scarecrow.lib.utils.LogUtils;
@@ -11,7 +13,6 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.lang.reflect.Method;
@@ -22,7 +23,7 @@ import java.util.stream.Collectors;
 
 import static mc.scarecrow.lib.core.LibCore.classesCache;
 
-public class LibAutoRegister {
+public class LibAutoRegister extends LibInstanceHandler {
 
     public static Map<String, Block> BLOCKS = new HashMap<>();
     public static Map<String, Item> ITEMS = new HashMap<>();
@@ -30,7 +31,8 @@ public class LibAutoRegister {
     public static Map<String, ContainerType<?>> CONTAINERS = new HashMap<>();
     public static Map<String, EntityType<?>> ENTITIES = new HashMap<>();
 
-    private static final Logger LOGGER = LogManager.getLogger();
+    @LibInject
+    private Logger logger;
 
     private String MOD_ID;
 
@@ -54,13 +56,13 @@ public class LibAutoRegister {
                     event.getRegistry().register(block);
                     LibAutoRegister.BLOCKS.put(id, block);
 
-                    LOGGER.info("Registered Block with id: " + id + ", and type: "
+                    logger.info("Registered Block with id: " + id + ", and type: "
                             + (block.getRegistryName() != null ? block.getRegistryName().toString() : id)
                             + " on side: " + Proxy.PROXY.getSide());
                 }
             }
         } catch (Throwable e) {
-            LogUtils.printError(LOGGER, e);
+            LogUtils.printError(logger, e);
         }
     }
 
@@ -80,11 +82,11 @@ public class LibAutoRegister {
                     event.getRegistry().register(item);
                     LibAutoRegister.ITEMS.put(id, item);
 
-                    LOGGER.info("Registered Item with id: " + id + ", and type: " + item.getName().getString() + " on side: " + Proxy.PROXY.getSide());
+                    logger.info("Registered Item with id: " + id + ", and type: " + item.getName().getString() + " on side: " + Proxy.PROXY.getSide());
                 }
             }
         } catch (Throwable e) {
-            LogUtils.printError(LOGGER, e);
+            LogUtils.printError(logger, e);
         }
     }
 
@@ -105,7 +107,7 @@ public class LibAutoRegister {
                                 try {
                                     return (TileEntity) entry.getKey().invoke(clazz);
                                 } catch (Throwable e) {
-                                    LogUtils.printError(LOGGER, e);
+                                    LogUtils.printError(logger, e);
                                     return null;
                                 }
                             }, LibAutoRegister.BLOCKS.get(blockId))
@@ -116,11 +118,11 @@ public class LibAutoRegister {
                     event.getRegistry().register(tileEntityType);
                     LibAutoRegister.TILE_ENTITIES.put(id, tileEntityType);
 
-                    LOGGER.info("Registered TileEntity with id: " + id + ", and type: " + (tileEntityType.getRegistryName() != null ? tileEntityType.getRegistryName().toString() : id) + " on side: " + Proxy.PROXY.getSide());
+                    logger.info("Registered TileEntity with id: " + id + ", and type: " + (tileEntityType.getRegistryName() != null ? tileEntityType.getRegistryName().toString() : id) + " on side: " + Proxy.PROXY.getSide());
                 }
             }
         } catch (Throwable e) {
-            LogUtils.printError(LOGGER, e);
+            LogUtils.printError(logger, e);
         }
     }
 
@@ -142,11 +144,11 @@ public class LibAutoRegister {
                     event.getRegistry().register(entityType);
                     LibAutoRegister.ENTITIES.put(id, entityType);
 
-                    LOGGER.info("Registered Entity with id: " + id + ", and type: " + entityType.getName().getString() + " on side: " + Proxy.PROXY.getSide());
+                    logger.info("Registered Entity with id: " + id + ", and type: " + entityType.getName().getString() + " on side: " + Proxy.PROXY.getSide());
                 }
             }
         } catch (Throwable e) {
-            LogUtils.printError(LOGGER, e);
+            LogUtils.printError(logger, e);
         }
     }
 
@@ -166,11 +168,11 @@ public class LibAutoRegister {
                     event.getRegistry().register(containerType);
                     LibAutoRegister.CONTAINERS.put(id, containerType);
 
-                    LOGGER.info("Registered Container with id: " + id + ", and type: " + containerType.getRegistryName() + " on side: " + Proxy.PROXY.getSide());
+                    logger.info("Registered Container with id: " + id + ", and type: " + containerType.getRegistryName() + " on side: " + Proxy.PROXY.getSide());
                 }
             }
         } catch (Throwable e) {
-            LogUtils.printError(LOGGER, e);
+            LogUtils.printError(logger, e);
         }
     }
 }

@@ -2,6 +2,7 @@ package mc.scarecrow.lib.tile;
 
 import com.google.gson.Gson;
 import mc.scarecrow.common.block.ScarecrowBlock;
+import mc.scarecrow.lib.core.libinitializer.LibInject;
 import mc.scarecrow.lib.proxy.Proxy;
 import mc.scarecrow.lib.utils.LogUtils;
 import mc.scarecrow.lib.utils.TaskUtils;
@@ -15,19 +16,19 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.SUpdateTileEntityPacket;
-import net.minecraft.tileentity.LockableLootTileEntity;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraft.util.NonNullList;
 import net.minecraft.world.server.ServerWorld;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-public abstract class SyncLockableLootTileBase<PojoType> extends LockableLootTileEntity implements TilePojoHandler<PojoType>, TileSidedTickHandler {
+public abstract class LibLockableTileBase<PojoType> extends LibTileBase implements TilePojoHandler<PojoType>, TileSidedTickHandler {
 
-    protected final Logger LOGGER = LogManager.getLogger();
+    @LibInject
+    protected Logger logger;
+
     private static final String NBT_TILE_DATA_TAG = "NBT_TILE_DATA_TAG";
     protected final NonNullList<ItemStack> chestContents;
     private final AtomicBoolean dataChange;
@@ -36,7 +37,7 @@ public abstract class SyncLockableLootTileBase<PojoType> extends LockableLootTil
     protected AtomicLong clientTicks;
     private final int chestSize;
 
-    protected SyncLockableLootTileBase(TileEntityType<?> tileType, int chestSize) {
+    protected LibLockableTileBase(TileEntityType<?> tileType, int chestSize) {
         super(tileType);
         this.dataChange = new AtomicBoolean();
         this.chestSize = chestSize;
@@ -45,12 +46,12 @@ public abstract class SyncLockableLootTileBase<PojoType> extends LockableLootTil
         this.serverTicks = new AtomicLong();
     }
 
-    protected SyncLockableLootTileBase(TileEntityType<?> tileType) {
+    protected LibLockableTileBase(TileEntityType<?> tileType) {
         this(tileType, 0);
     }
 
     @SuppressWarnings("unchecked")
-    private <T extends SyncLockableLootTileBase<PojoType>> Class<T> getSubClass() {
+    private <T extends LibLockableTileBase<PojoType>> Class<T> getSubClass() {
         return (Class<T>) this.getClass().asSubclass(this.getClass());
     }
 
@@ -77,7 +78,7 @@ public abstract class SyncLockableLootTileBase<PojoType> extends LockableLootTil
                 ItemStackHelper.loadAllItems(nbt, this.chestContents);
 
         } catch (Throwable e) {
-            LogUtils.printError(LOGGER, e);
+            LogUtils.printError(logger, e);
         }
     }
 
@@ -94,7 +95,7 @@ public abstract class SyncLockableLootTileBase<PojoType> extends LockableLootTil
             return compoundNBT;
 
         } catch (Throwable e) {
-            LogUtils.printError(LOGGER, e);
+            LogUtils.printError(logger, e);
             return new CompoundNBT();
         }
     }
@@ -110,11 +111,11 @@ public abstract class SyncLockableLootTileBase<PojoType> extends LockableLootTil
     @Override
     public void tick() {
         // Tick on server side
-        TaskUtils.executeIfTileOnServer(world, pos, getSubClass(), syncLockableLootTileBase
+        TaskUtils.executeIfTileOnServer(world, pos, getSubClass(), libLockableTileBase
                 -> onTickServer((ServerWorld) world, serverTicks.getAndIncrement()));
 
         // Tick on client side
-        TaskUtils.executeIfTileOnClient(world, pos, getSubClass(), syncLockableLootTileBase
+        TaskUtils.executeIfTileOnClient(world, pos, getSubClass(), libLockableTileBase
                 -> onTickClient((ClientWorld) world, Proxy.PROXY.getPlayerEntity(), clientTicks.getAndIncrement()));
     }
 
@@ -130,7 +131,7 @@ public abstract class SyncLockableLootTileBase<PojoType> extends LockableLootTil
             return writeTag(tag);
 
         } catch (Throwable e) {
-            LogUtils.printError(LOGGER, e);
+            LogUtils.printError(logger, e);
             return new CompoundNBT();
         }
     }
@@ -142,7 +143,7 @@ public abstract class SyncLockableLootTileBase<PojoType> extends LockableLootTil
             readTag(nbt);
 
         } catch (Throwable e) {
-            LogUtils.printError(LOGGER, e);
+            LogUtils.printError(logger, e);
         }
     }
 
@@ -152,7 +153,7 @@ public abstract class SyncLockableLootTileBase<PojoType> extends LockableLootTil
             return writeTag(super.getUpdateTag());
 
         } catch (Throwable e) {
-            LogUtils.printError(LOGGER, e);
+            LogUtils.printError(logger, e);
             return new CompoundNBT();
         }
     }
@@ -163,7 +164,7 @@ public abstract class SyncLockableLootTileBase<PojoType> extends LockableLootTil
             super.handleUpdateTag(state, tag);
             readTag(tag);
         } catch (Throwable e) {
-            LogUtils.printError(LOGGER, e);
+            LogUtils.printError(logger, e);
         }
     }
 
@@ -173,7 +174,7 @@ public abstract class SyncLockableLootTileBase<PojoType> extends LockableLootTil
             readTag(pkt.getNbtCompound());
 
         } catch (Throwable e) {
-            LogUtils.printError(LOGGER, e);
+            LogUtils.printError(logger, e);
         }
     }
 
@@ -190,7 +191,7 @@ public abstract class SyncLockableLootTileBase<PojoType> extends LockableLootTil
             return null;
 
         } catch (Throwable e) {
-            LogUtils.printError(LOGGER, e);
+            LogUtils.printError(logger, e);
             return null;
         }
     }

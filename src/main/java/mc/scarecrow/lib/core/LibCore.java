@@ -1,9 +1,6 @@
 package mc.scarecrow.lib.core;
 
-import mc.scarecrow.lib.core.libinitializer.ILibElement;
-import mc.scarecrow.lib.core.libinitializer.LibElement;
-import mc.scarecrow.lib.core.libinitializer.LibInject;
-import mc.scarecrow.lib.core.libinitializer.OnRegisterManuallyListener;
+import mc.scarecrow.lib.core.libinitializer.*;
 import mc.scarecrow.lib.register.LibAutoRegister;
 import mc.scarecrow.lib.utils.LogUtils;
 import mc.scarecrow.lib.utils.ReflectionUtils;
@@ -12,21 +9,22 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
-import static mc.scarecrow.lib.utils.ReflectionUtils.classToLibElement;
-import static mc.scarecrow.lib.utils.ReflectionUtils.warnCircularInjectionReference;
+import static mc.scarecrow.lib.utils.ReflectionUtils.*;
 
 
 public class LibCore {
 
     private static final Logger LOGGER = LogManager.getLogger();
     private static final Map<Class<? extends ILibElement>, ILibElement> libCdi = new HashMap<>();
+    private static final Map<Class<?>, Method> cdi = new HashMap<>();
+    private static final Map<Class<?>, Object> cdiProducers = new HashMap<>();
     public static List<Class<?>> classesCache;
 
     private static final OnRegisterManuallyListener onRegisterManuallyListener = libElement -> libCdi.put(libElement.getClass(), libElement);
@@ -70,7 +68,7 @@ public class LibCore {
                         ILibElement libElement;
                         if ((libElement = classToLibElement(elementClass)) != null) {
                             libCdi.put(libElement.getClass(), libElement);
-                            initializeInjections(elementClass);
+                            initializeInjections(elementClass, libElement);
                             libElement.postConstruct(modId, onRegisterManuallyListener, fmlJavaModLoadingContext);
                         }
 
@@ -81,8 +79,8 @@ public class LibCore {
                 unresolvable = currentSize == libElements.size();
             }
 
-            // resolve external dependencies
-            classesCache.stream().filter(c -> !libCdi.containsKey(c)).collect(Collectors.toSet()).forEach(LibCore::initializeInjections);
+            initializeProducers();
+
         } catch (Throwable e) {
             LogUtils.printError(LOGGER, e);
         } finally {
@@ -90,23 +88,65 @@ public class LibCore {
         }
     }
 
-    public static void initializeInjections(Class<?> clazz) {
+    public static void handleInstance(Object o) {
+        initializeInjections(o.getClass(), o);
+    }
+
+    public static void initializeInjections(Class<?> clazz, Object o) {
         try {
+            if (clazz.getSuperclass() != null)
+                initializeInjections(clazz.getSuperclass(), o);
+
             List<Field> fieldsAnnotated = ReflectionUtils.getFieldsAnnotated(Collections.singletonList(clazz), LibInject.class);
             for (Field field : fieldsAnnotated) {
+                field.setAccessible(true);
                 if (libCdi.containsKey(field.getType())) {
-                    field.setAccessible(true);
-                    if (libCdi.containsKey(clazz)) {
-                        ILibElement availableCdi = libCdi.get(field.getType());
-                        field.set(libCdi.get(clazz), availableCdi);
-                    } else if (Modifier.isStatic(field.getModifiers())) {
-                        ILibElement availableCdi = libCdi.get(field.getType());
-                        field.set(clazz, field.getType().cast(availableCdi));
+                    ILibElement availableCdi = libCdi.get(field.getType());
+                    field.set(o, availableCdi);
+                } else if (cdi.containsKey(field.getType())) {
+                    Method method = cdi.get(field.getType());
+                    Object result;
+                    if (method.getParameterCount() > 0) {
+                        InjectionPoint injectionPoint = new InjectionPoint(clazz);
+                        result = method.invoke(cdiProducers.get(method.getDeclaringClass()), injectionPoint);
+                    } else {
+                        result = method.invoke(cdiProducers.get(method.getDeclaringClass()));
                     }
+                    if (result != null)
+                        field.set(o, result);
+                } else if (hasParameterlessConstructor(field.getType())) {
+                    field.set(o, field.getType().newInstance());
                 }
             }
         } catch (Throwable e) {
             LogUtils.printError(LOGGER, e);
         }
+    }
+
+    private static void initializeProducers() {
+        for (Class<?> clazz : classesCache) {
+            try {
+                List<Method> methodsAnnotated = ReflectionUtils.getMethodsAnnotated(clazz, LibProducer.class);
+                for (Method method : methodsAnnotated) {
+                    //LibProducer libProducer = method.getAnnotation(LibProducer.class);
+                    Class<?> returnType = method.getReturnType();
+                    if (returnType == Void.TYPE)
+                        continue;
+                    if (hasParameterlessConstructor(clazz) || method.getModifiers() == Modifier.STATIC) {
+                        if (method.getParameterCount() == 0) {
+                            method.setAccessible(true);
+                            cdi.put(method.getReturnType(), method);
+                            cdiProducers.put(clazz, method.getModifiers() == Modifier.STATIC ? null : clazz.newInstance());
+                        } else if (method.getParameterCount() == 1 && method.getParameterTypes()[0].equals(InjectionPoint.class)) {
+                            cdi.put(method.getReturnType(), method);
+                            cdiProducers.put(clazz, method.getModifiers() == Modifier.STATIC ? null : clazz.newInstance());
+                        }
+                    }
+                }
+            } catch (Throwable e) {
+                LogUtils.printError(LOGGER, e);
+            }
+        }
+
     }
 }

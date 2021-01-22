@@ -1,10 +1,10 @@
 package mc.scarecrow.common.block.tile;
 
+import mc.scarecrow.lib.core.libinitializer.LibInject;
 import mc.scarecrow.lib.utils.LogUtils;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.NonNullList;
 import net.minecraftforge.common.ForgeHooks;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -13,7 +13,8 @@ import java.util.function.Supplier;
 
 public class ScarecrowTileFuelManger {
 
-    private static final Logger LOGGER = LogManager.getLogger();
+    @LibInject
+    private Logger logger;
 
     private final Supplier<NonNullList<ItemStack>> supplier;
 
@@ -63,7 +64,7 @@ public class ScarecrowTileFuelManger {
                 currentBurningTime.set(Math.max(currentBurningTime.get(), 0));
             }
         } catch (Throwable e) {
-            LogUtils.printError(LOGGER, e);
+            LogUtils.printError(logger, e);
         } finally {
             lastUpdate = serverTicks;
         }

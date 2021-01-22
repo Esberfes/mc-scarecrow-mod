@@ -4,17 +4,16 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import mc.scarecrow.common.block.container.ScarecrowContainer;
 import mc.scarecrow.common.block.tile.ScarecrowTile;
+import mc.scarecrow.lib.core.libinitializer.LibInject;
+import mc.scarecrow.lib.screen.LibContainerScreenBase;
 import mc.scarecrow.lib.utils.LogUtils;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.IHasContainer;
-import net.minecraft.client.gui.screen.inventory.ContainerScreen;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import static mc.scarecrow.constant.ScarecrowModConstants.MOD_IDENTIFIER;
@@ -22,10 +21,12 @@ import static mc.scarecrow.constant.ScarecrowScreenConstants.*;
 
 @SuppressWarnings("deprecation")
 @OnlyIn(Dist.CLIENT)
-public class ScarecrowScreen extends ContainerScreen<Container> implements IHasContainer<Container> {
+public class ScarecrowScreen extends LibContainerScreenBase {
 
-    private static final Logger LOGGER = LogManager.getLogger();
     public static final ResourceLocation GUI = new ResourceLocation(MOD_IDENTIFIER, "textures/screens/scarecrow_screen.png");
+
+    @LibInject
+    private Logger logger;
 
     private final int spriteXSize;
     private final int spriteYSize;
@@ -91,7 +92,7 @@ public class ScarecrowScreen extends ContainerScreen<Container> implements IHasC
                         14 - flameOffset, this.spriteXSize, this.spriteYSize);
             }
         } catch (Throwable e) {
-            LogUtils.printError(LOGGER, e);
+            LogUtils.printError(logger, e);
         }
     }
 

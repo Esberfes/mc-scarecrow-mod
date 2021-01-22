@@ -4,6 +4,8 @@ import mc.scarecrow.client.init.ClientRegistryHandler;
 import mc.scarecrow.common.block.tile.ScarecrowTile;
 import mc.scarecrow.common.capability.ScarecrowCapabilities;
 import mc.scarecrow.common.entity.ScarecrowPlayerEntity;
+import mc.scarecrow.lib.block.LibBaseBlock;
+import mc.scarecrow.lib.core.libinitializer.LibInject;
 import mc.scarecrow.lib.register.LibAutoRegister;
 import mc.scarecrow.lib.utils.LogUtils;
 import mc.scarecrow.lib.utils.TaskUtils;
@@ -39,7 +41,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ToolType;
 import net.minecraftforge.fml.network.NetworkHooks;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Collections;
@@ -47,10 +48,12 @@ import java.util.List;
 import java.util.Random;
 
 @SuppressWarnings("deprecation")
-public class ScarecrowBlock extends Block {
+public class ScarecrowBlock extends LibBaseBlock {
 
-    private static final Logger LOGGER = LogManager.getLogger();
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+
+    @LibInject
+    private Logger logger;
 
     public ScarecrowBlock() {
         super(Properties
@@ -61,8 +64,7 @@ public class ScarecrowBlock extends Block {
                 .harvestLevel(1)
                 .harvestTool(ToolType.PICKAXE));
 
-        setDefaultState(getStateContainer().getBaseState().with(FACING, Direction.NORTH)
-        );
+        setDefaultState(getStateContainer().getBaseState().with(FACING, Direction.NORTH));
     }
 
     @Override
@@ -115,7 +117,7 @@ public class ScarecrowBlock extends Block {
             return ActionResultType.func_233537_a_(worldIn.isRemote());
 
         } catch (Throwable e) {
-            LogUtils.printError(LOGGER, e);
+            LogUtils.printError(logger, e);
             return ActionResultType.FAIL;
         }
     }
@@ -131,7 +133,7 @@ public class ScarecrowBlock extends Block {
                 scarecrowTile.setOwner(((ServerPlayerEntity) placer).getGameProfile().getId());
             });
         } catch (Throwable e) {
-            LogUtils.printError(LOGGER, e);
+            LogUtils.printError(logger, e);
         }
     }
 
@@ -177,7 +179,7 @@ public class ScarecrowBlock extends Block {
                 ScarecrowPlayerEntity.remove(scarecrowTile.getFakePlayer(), (ServerWorld) worldIn);
             });
         } catch (Throwable e) {
-            LogUtils.printError(LOGGER, e);
+            LogUtils.printError(logger, e);
         }
     }
 

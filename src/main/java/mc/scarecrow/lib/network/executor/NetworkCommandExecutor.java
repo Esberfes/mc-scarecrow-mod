@@ -24,11 +24,11 @@ public final class NetworkCommandExecutor implements NetworkCommandExecutorListe
     @LibInject
     private NetworkExecutorService executorService;
 
-    private final Map<String, BiConsumer<ServerPlayerEntity, NetworkCommand>> subscriptions = new HashMap<>();
+    private final Map<String, BiConsumer<ServerPlayerEntity, NetworkCommand>> subscriptions;
     private int aiId;
 
     public NetworkCommandExecutor() {
-
+        subscriptions = new HashMap<>();
     }
 
     public <T> void addMessage(INetworkCommandHandler<T> handler, Class<T> message) {

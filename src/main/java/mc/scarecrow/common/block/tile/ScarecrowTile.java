@@ -4,8 +4,9 @@ import mc.scarecrow.common.block.container.ScarecrowContainer;
 import mc.scarecrow.common.capability.ScarecrowCapabilities;
 import mc.scarecrow.common.capability.pojo.ScarecrowTilePojo;
 import mc.scarecrow.common.entity.ScarecrowPlayerEntity;
+import mc.scarecrow.lib.core.libinitializer.LibInject;
 import mc.scarecrow.lib.register.LibAutoRegister;
-import mc.scarecrow.lib.tile.SyncLockableLootTileBase;
+import mc.scarecrow.lib.tile.LibLockableTileBase;
 import mc.scarecrow.lib.utils.LogUtils;
 import mc.scarecrow.lib.utils.TaskUtils;
 import mcp.mobius.waila.api.IComponentProvider;
@@ -29,19 +30,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static mc.scarecrow.constant.ScarecrowModConstants.INVENTORY_SIZE;
 import static mc.scarecrow.lib.utils.UIUtils.ticksToTime;
 
-public class ScarecrowTile extends SyncLockableLootTileBase<ScarecrowTilePojo> implements IComponentProvider {
+public class ScarecrowTile extends LibLockableTileBase<ScarecrowTilePojo> implements IComponentProvider {
+
+    @LibInject
+    private AtomicBoolean taskInProgress;
 
     private final ScarecrowTileFuelManger fuelManager;
-    private final AtomicBoolean taskInProgress;
     private ScarecrowPlayerEntity fakePlayer;
     private UUID owner;
     private double lastYaw = 0D;
     private UUID closestPlayer;
 
+
     public ScarecrowTile() {
         super(LibAutoRegister.TILE_ENTITIES.get("scarecrow"), INVENTORY_SIZE);
         fuelManager = new ScarecrowTileFuelManger(this::getItems);
-        taskInProgress = new AtomicBoolean();
         taskInProgress.set(false);
     }
 
@@ -130,7 +133,7 @@ public class ScarecrowTile extends SyncLockableLootTileBase<ScarecrowTilePojo> i
                     shouldUpdate();
                 }
             } catch (Throwable e) {
-                LogUtils.printError(LOGGER, e);
+                LogUtils.printError(logger, e);
             } finally {
                 // Release flag for next update
                 taskInProgress.set(false);
@@ -191,7 +194,7 @@ public class ScarecrowTile extends SyncLockableLootTileBase<ScarecrowTilePojo> i
             return new ScarecrowContainer(id, world, getPos(), player);
 
         } catch (Throwable e) {
-            LogUtils.printError(LOGGER, e);
+            LogUtils.printError(logger, e);
             return null;
         }
     }
