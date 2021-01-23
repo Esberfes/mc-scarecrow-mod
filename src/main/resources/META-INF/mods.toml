@@ -9,7 +9,7 @@ version = "${file.jarVersion}"
 displayName = "Scarecrow - Spawn Chunk Loder"
 displayURL = "https://github.com/Esberfes/mc-scarecrow-mod"
 logoFile = "examplemod.png"
-authors = "aoerek and esberfes"
+authors = "esberfes and aorek"
 
 description = '''
 A chunk loader that keeps mob spawning active ...
