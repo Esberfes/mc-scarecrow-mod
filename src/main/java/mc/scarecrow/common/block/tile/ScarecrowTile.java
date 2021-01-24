@@ -12,7 +12,6 @@ import mc.scarecrow.lib.utils.TaskUtils;
 import mcp.mobius.waila.api.IComponentProvider;
 import mcp.mobius.waila.api.IDataAccessor;
 import mcp.mobius.waila.api.IPluginConfig;
-import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
@@ -22,6 +21,8 @@ import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.world.server.ServerWorld;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.List;
 import java.util.UUID;
@@ -108,19 +109,25 @@ public class ScarecrowTile extends LibLockableTileBase<ScarecrowTilePojo> implem
                 if (serverTicks % 10 == 0) {
                     fuelManager.onUpdate(serverTicks);
 
-                    if (isActive() && fakePlayer == null)
-                        fakePlayer = ScarecrowPlayerEntity.create(world, getPos(), UUID.randomUUID());
+                    if (serverTicks % 50 == 0) {
+                        if (isActive() && fakePlayer == null)
+                            fakePlayer = ScarecrowPlayerEntity.create(world, getPos(), UUID.randomUUID());
 
-                    if (!isActive() && fakePlayer != null) {
-                        ScarecrowPlayerEntity.remove(fakePlayer, world);
-                        fakePlayer = null;
-                    }
-
-                    if (!isActive()) {
-                        world.getCapability(ScarecrowCapabilities.CHUNK_CAPABILITY).ifPresent(tracker -> {
-                            ChunkPos chunkPos = world.getChunk(pos).getPos();
-                            tracker.remove(chunkPos, pos);
-                        });
+                        if (!isActive() && fakePlayer != null) {
+                            ScarecrowPlayerEntity.remove(fakePlayer, world);
+                            fakePlayer = null;
+                        }
+                        if (!isActive()) {
+                            world.getCapability(ScarecrowCapabilities.CHUNK_CAPABILITY).ifPresent(tracker -> {
+                                ChunkPos chunkPos = world.getChunk(pos).getPos();
+                                tracker.remove(chunkPos, pos);
+                            });
+                        } else {
+                            world.getCapability(ScarecrowCapabilities.CHUNK_CAPABILITY).ifPresent(tracker -> {
+                                ChunkPos chunkPos = world.getChunk(pos).getPos();
+                                tracker.add(chunkPos, pos);
+                            });
+                        }
                     }
 
                     PlayerEntity closestPlayer = world.getClosestPlayer((double) getPos().getX() + 0.5D,
@@ -141,8 +148,9 @@ public class ScarecrowTile extends LibLockableTileBase<ScarecrowTilePojo> implem
         });
     }
 
+    @OnlyIn(Dist.CLIENT)
     @Override
-    public void onTickClient(ClientWorld world, ClientPlayerEntity clientPlayerEntity, long clientTicks) {
+    public void onTickClient(ClientWorld world, PlayerEntity clientPlayerEntity, long clientTicks) {
         super.onTickClient(world, clientPlayerEntity, clientTicks);
     }
 

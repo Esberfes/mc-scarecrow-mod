@@ -169,7 +169,7 @@ public class ScarecrowBlock extends LibBaseBlock {
      */
     private void onRemovedFromWorld(World worldIn, BlockPos pos) {
         try {
-            TaskUtils.executeIfTileOnServer(worldIn, pos, ScarecrowTile.class, scarecrowTile -> {
+            TaskUtils.executeIfSided(true, () -> TaskUtils.executeIfTileOnServer(worldIn, pos, ScarecrowTile.class, scarecrowTile -> {
                 // Remove from capabilities
                 worldIn.getCapability(ScarecrowCapabilities.CHUNK_CAPABILITY).ifPresent(tracker -> {
                     ChunkPos chunkPos = worldIn.getChunk(pos).getPos();
@@ -177,7 +177,7 @@ public class ScarecrowBlock extends LibBaseBlock {
                 });
                 // Remove fake player
                 ScarecrowPlayerEntity.remove(scarecrowTile.getFakePlayer(), (ServerWorld) worldIn);
-            });
+            }));
         } catch (Throwable e) {
             LogUtils.printError(logger, e);
         }
@@ -197,7 +197,7 @@ public class ScarecrowBlock extends LibBaseBlock {
                     double ySpeed = Math.abs((random.nextFloat() - 0.5D) * 0.3D);
                     double zSpeed = (random.nextFloat() - 0.5D) * 0.3D;
 
-                    world.addParticle(ClientRegistryHandler.ClientRegistry.scarecrowParticle, xOrigin, yOrigin, zOrigin, xSpeed, ySpeed, zSpeed);
+                    world.addParticle(ClientRegistryHandler.scarecrowParticle, xOrigin, yOrigin, zOrigin, xSpeed, ySpeed, zSpeed);
                 }
             }
         });

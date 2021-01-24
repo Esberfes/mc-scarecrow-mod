@@ -4,6 +4,7 @@ import mc.scarecrow.common.block.ScarecrowBlock;
 import mc.scarecrow.common.block.container.ScarecrowContainer;
 import mc.scarecrow.common.block.tile.ScarecrowTile;
 import mc.scarecrow.common.entity.ScarecrowPlayerEntity;
+import mc.scarecrow.lib.proxy.Proxy;
 import mc.scarecrow.lib.register.LibAutoRegister;
 import mc.scarecrow.lib.register.annotation.*;
 import net.minecraft.block.Block;
@@ -16,8 +17,6 @@ import net.minecraft.item.ItemGroup;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.extensions.IForgeContainerType;
-
-import static mc.scarecrow.ScarecrowMod.PROXY;
 
 public class CommonRegistryHandler {
 
@@ -50,7 +49,7 @@ public class CommonRegistryHandler {
     public static ContainerType<?> registerScarecrowContainer() {
         return IForgeContainerType.create((windowId, inv, data) -> {
             BlockPos pos = data.readBlockPos();
-            return new ScarecrowContainer(windowId, PROXY.getPlayerWorld(), pos, inv);
+            return new ScarecrowContainer(windowId, Proxy.PROXY.getPlayerWorld(), pos, inv);
         });
     }
 }

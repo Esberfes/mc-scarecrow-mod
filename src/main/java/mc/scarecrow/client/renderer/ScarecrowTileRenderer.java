@@ -1,10 +1,10 @@
 package mc.scarecrow.client.renderer;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import mc.scarecrow.ScarecrowMod;
 import mc.scarecrow.common.block.ScarecrowBlock;
 import mc.scarecrow.common.block.tile.ScarecrowTile;
 import mc.scarecrow.lib.core.libinitializer.LibInject;
+import mc.scarecrow.lib.proxy.Proxy;
 import mc.scarecrow.lib.tile.LbTileEntityRenderBase;
 import mc.scarecrow.lib.utils.LogUtils;
 import mc.scarecrow.lib.utils.UIUtils;
@@ -22,12 +22,15 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.vector.Quaternion;
 import net.minecraft.util.math.vector.Vector3d;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.model.data.EmptyModelData;
 import net.minecraftforge.common.ForgeHooks;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Random;
 
+@OnlyIn(Dist.CLIENT)
 public class ScarecrowTileRenderer extends LbTileEntityRenderBase {
 
     @LibInject
@@ -51,7 +54,7 @@ public class ScarecrowTileRenderer extends LbTileEntityRenderBase {
             if (!(tile instanceof ScarecrowTile))
                 throw new Exception("Tile must be a instance of ScarecrowTile");
 
-            PlayerEntity player = ScarecrowMod.PROXY.getPlayerEntity();
+            PlayerEntity player = Proxy.PROXY.getPlayerEntity();
             PlayerEntity target = ((ScarecrowTile) tile).getClosestPlayer() != null ? player.world.getPlayerByUuid(((ScarecrowTile) tile).getClosestPlayer()) : null;
             BlockState tileState = player.world.getBlockState(tile.getPos());
             Direction tileFacingDirection = tileState.get(ScarecrowBlock.FACING);

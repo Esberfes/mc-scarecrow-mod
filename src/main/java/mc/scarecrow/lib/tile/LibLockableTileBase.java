@@ -8,7 +8,6 @@ import mc.scarecrow.lib.utils.LogUtils;
 import mc.scarecrow.lib.utils.TaskUtils;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.ItemStackHelper;
@@ -19,6 +18,8 @@ import net.minecraft.network.play.server.SUpdateTileEntityPacket;
 import net.minecraft.tileentity.TileEntityType;
 import net.minecraft.util.NonNullList;
 import net.minecraft.world.server.ServerWorld;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -111,16 +112,17 @@ public abstract class LibLockableTileBase<PojoType> extends LibTileBase implemen
     @Override
     public void tick() {
         // Tick on server side
-        TaskUtils.executeIfTileOnServer(world, pos, getSubClass(), libLockableTileBase
-                -> onTickServer((ServerWorld) world, serverTicks.getAndIncrement()));
+        TaskUtils.executeIfSided(true, () -> TaskUtils.executeIfTileOnServer(world, pos, getSubClass(), libLockableTileBase
+                -> onTickServer((ServerWorld) world, serverTicks.getAndIncrement())));
 
         // Tick on client side
-        TaskUtils.executeIfTileOnClient(world, pos, getSubClass(), libLockableTileBase
-                -> onTickClient((ClientWorld) world, Proxy.PROXY.getPlayerEntity(), clientTicks.getAndIncrement()));
+        TaskUtils.executeIfSided(false, () -> TaskUtils.executeIfTileOnClient(world, pos, getSubClass(), libLockableTileBase
+                -> onTickClient((ClientWorld) world, Proxy.PROXY.getPlayerEntity(), clientTicks.getAndIncrement())));
     }
 
     @Override
-    public void onTickClient(ClientWorld world, ClientPlayerEntity clientPlayerEntity, long clientTicks) {
+    @OnlyIn(Dist.CLIENT)
+    public void onTickClient(ClientWorld world, PlayerEntity clientPlayerEntity, long clientTicks) {
 
     }
 

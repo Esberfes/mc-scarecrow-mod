@@ -1,9 +1,12 @@
 package mc.scarecrow.lib.utils;
 
 import mc.scarecrow.lib.gui.VertexDrawerBuilder;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.function.Supplier;
 
+@OnlyIn(Dist.CLIENT)
 public abstract class GuiUtils {
 
     private GuiUtils() {

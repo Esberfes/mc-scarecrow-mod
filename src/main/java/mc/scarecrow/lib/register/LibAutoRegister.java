@@ -34,7 +34,7 @@ public class LibAutoRegister extends LibInstanceHandler {
     @LibInject
     private Logger logger;
 
-    private String MOD_ID;
+    private final String MOD_ID;
 
     public LibAutoRegister(String MOD_ID) {
         this.MOD_ID = MOD_ID;
@@ -82,7 +82,7 @@ public class LibAutoRegister extends LibInstanceHandler {
                     event.getRegistry().register(item);
                     LibAutoRegister.ITEMS.put(id, item);
 
-                    logger.info("Registered Item with id: " + id + ", and type: " + item.getName().getString() + " on side: " + Proxy.PROXY.getSide());
+                    logger.info("Registered Item with id: " + id + ", and type: " + item.getRegistryType().getSimpleName() + " on side: " + Proxy.PROXY.getSide());
                 }
             }
         } catch (Throwable e) {
@@ -118,7 +118,7 @@ public class LibAutoRegister extends LibInstanceHandler {
                     event.getRegistry().register(tileEntityType);
                     LibAutoRegister.TILE_ENTITIES.put(id, tileEntityType);
 
-                    logger.info("Registered TileEntity with id: " + id + ", and type: " + (tileEntityType.getRegistryName() != null ? tileEntityType.getRegistryName().toString() : id) + " on side: " + Proxy.PROXY.getSide());
+                    logger.info("Registered TileEntity with id: " + id + ", and type: " + (tileEntityType.getRegistryType() != null ? tileEntityType.getRegistryType().getSimpleName() : id) + " on side: " + Proxy.PROXY.getSide());
                 }
             }
         } catch (Throwable e) {

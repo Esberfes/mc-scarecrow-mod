@@ -8,10 +8,9 @@ public interface ILibElement {
      * is invoked
      *
      * @param modId
-     * @param onRegisterManuallyListener
      * @param loadingContext
      */
-    default void postConstruct(String modId, OnRegisterManuallyListener onRegisterManuallyListener, FMLJavaModLoadingContext loadingContext) {
+    default void postConstruct(String modId, FMLJavaModLoadingContext loadingContext) {
     }
 
     ;

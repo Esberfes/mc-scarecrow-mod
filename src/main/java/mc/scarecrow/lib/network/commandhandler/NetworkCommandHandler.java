@@ -44,7 +44,7 @@ public class NetworkCommandHandler extends LibInstanceHandler implements INetwor
     @Override
     public NetworkCommand decodeMessage(PacketBuffer packetBuffer) {
         try {
-            return new Gson().fromJson(packetBuffer.readString(), NetworkCommand.class);
+            return new Gson().fromJson(packetBuffer.readString(32767), NetworkCommand.class);
         } catch (Throwable e) {
             LogUtils.printError(logger, e);
             return null;
@@ -54,7 +54,7 @@ public class NetworkCommandHandler extends LibInstanceHandler implements INetwor
     @Override
     public void encodeMessage(NetworkCommand networkCommand, PacketBuffer packetBuffer) {
         try {
-            packetBuffer.writeString(gson.toJson(networkCommand));
+            packetBuffer.writeString(gson.toJson(networkCommand), 32767);
         } catch (Throwable e) {
             LogUtils.printError(logger, e);
         }

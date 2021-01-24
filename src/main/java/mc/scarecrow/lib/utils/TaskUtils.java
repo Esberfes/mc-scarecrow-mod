@@ -1,5 +1,6 @@
 package mc.scarecrow.lib.utils;
 
+import mc.scarecrow.lib.proxy.Proxy;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.tileentity.TileEntity;
@@ -7,6 +8,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,6 +33,7 @@ public abstract class TaskUtils {
             ServerLifecycleHooks.getCurrentServer().execute(runnable);
     }
 
+    @OnlyIn(Dist.CLIENT)
     public static <T extends TileEntity> void executeIfTileOnClient(World world, BlockPos pos, Class<T> type, Consumer<T> consumer) {
         try {
             if (world != null && world.isRemote() && world instanceof ClientWorld)
@@ -75,5 +79,12 @@ public abstract class TaskUtils {
         } catch (Throwable e) {
             LogUtils.printError(LOGGER, e);
         }
+    }
+
+    public static <T extends TileEntity> void executeIfSided(boolean onServer, Runnable runnable) {
+        if (Proxy.PROXY.getSide().isServerLogic() && onServer)
+            runnable.run();
+        else if (!Proxy.PROXY.getSide().isServerLogic() && !onServer)
+            runnable.run();
     }
 }

@@ -27,7 +27,6 @@ public class LibCore {
     private static final Map<Class<?>, Object> cdiProducers = new HashMap<>();
     public static List<Class<?>> classesCache;
 
-    private static final OnRegisterManuallyListener onRegisterManuallyListener = libElement -> libCdi.put(libElement.getClass(), libElement);
 
     public static void initialize(FMLJavaModLoadingContext fmlJavaModLoadingContext, String modId) {
         classesCache = ReflectionUtils.getClassesFromModId(modId);
@@ -69,7 +68,7 @@ public class LibCore {
                         if ((libElement = classToLibElement(elementClass)) != null) {
                             libCdi.put(libElement.getClass(), libElement);
                             initializeInjections(elementClass, libElement);
-                            libElement.postConstruct(modId, onRegisterManuallyListener, fmlJavaModLoadingContext);
+                            libElement.postConstruct(modId, fmlJavaModLoadingContext);
                         }
 
                         libElements.remove(i);
@@ -128,7 +127,6 @@ public class LibCore {
             try {
                 List<Method> methodsAnnotated = ReflectionUtils.getMethodsAnnotated(clazz, LibProducer.class);
                 for (Method method : methodsAnnotated) {
-                    //LibProducer libProducer = method.getAnnotation(LibProducer.class);
                     Class<?> returnType = method.getReturnType();
                     if (returnType == Void.TYPE)
                         continue;
@@ -144,9 +142,9 @@ public class LibCore {
                     }
                 }
             } catch (Throwable e) {
+                LOGGER.error("Class error: " + clazz.getCanonicalName());
                 LogUtils.printError(LOGGER, e);
             }
         }
-
     }
 }

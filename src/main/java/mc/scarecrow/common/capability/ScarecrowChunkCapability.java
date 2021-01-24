@@ -41,9 +41,8 @@ public class ScarecrowChunkCapability implements Capability.IStorage<ScarecrowCh
                 this.world.forceChunk(chunk.x, chunk.z, true);
             }
 
-            this.world.getTileEntity(position);
-
             this.chunksBlocks.get(chunk).add(position);
+
         } catch (Throwable e) {
             LogUtils.printError(LOGGER, e);
         }

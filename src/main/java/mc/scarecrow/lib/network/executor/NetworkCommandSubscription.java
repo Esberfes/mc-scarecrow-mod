@@ -1,33 +1,28 @@
 package mc.scarecrow.lib.network.executor;
 
 import mc.scarecrow.lib.core.LibInstanceHandler;
-import mc.scarecrow.lib.core.libinitializer.LibInject;
 import net.minecraft.entity.player.ServerPlayerEntity;
 
-import java.util.UUID;
 import java.util.function.BiConsumer;
 
 public final class NetworkCommandSubscription extends LibInstanceHandler {
 
     private final String id;
 
-    @LibInject
-    private NetworkCommandExecutor commandExecutor;
-
-    private NetworkCommandSubscription(BiConsumer<ServerPlayerEntity, NetworkCommand> consumer) {
-        this.id = UUID.randomUUID().toString();
-        commandExecutor.subscribe(id, consumer);
+    private NetworkCommandSubscription(String id, BiConsumer<ServerPlayerEntity, NetworkCommand> consumer) {
+        this.id = id;
+        NetworkCommandExecutor.subscribe(id, consumer);
     }
 
     public void execute(NetworkCommand networkCommand) {
-        commandExecutor.sendToServer(networkCommand);
+        NetworkCommandExecutor.getInstance().sendToServer(networkCommand);
     }
 
     public NetworkCommandBuilder commandBuilder() {
         return new NetworkCommandBuilder(id);
     }
 
-    public static NetworkCommandSubscription build(BiConsumer<ServerPlayerEntity, NetworkCommand> consumer) {
-        return new NetworkCommandSubscription(consumer);
+    public static NetworkCommandSubscription build(String id, BiConsumer<ServerPlayerEntity, NetworkCommand> consumer) {
+        return new NetworkCommandSubscription(id, consumer);
     }
 }

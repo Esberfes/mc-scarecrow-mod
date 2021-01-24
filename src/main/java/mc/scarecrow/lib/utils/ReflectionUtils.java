@@ -3,7 +3,10 @@ package mc.scarecrow.lib.utils;
 import mc.scarecrow.lib.core.libinitializer.ILibElement;
 import mc.scarecrow.lib.core.libinitializer.LibElement;
 import mc.scarecrow.lib.core.libinitializer.LibInject;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.loading.FMLLoader;
+import net.minecraftforge.fml.loading.moddiscovery.ModAnnotation;
 import net.minecraftforge.fml.loading.moddiscovery.ModFile;
 import net.minecraftforge.fml.loading.moddiscovery.ModFileInfo;
 import net.minecraftforge.forgespi.language.ModFileScanData;
@@ -12,6 +15,7 @@ import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.Type;
 
 import java.lang.annotation.Annotation;
+import java.lang.annotation.ElementType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -36,6 +40,19 @@ public abstract class ReflectionUtils {
             if ((modFileInfo = FMLLoader.getLoadingModList().getModFileById(modId)) != null) {
                 ModFile file;
                 if ((file = modFileInfo.getFile()) != null) {
+                    List<String> blackList = new ArrayList<>();
+
+                    if (FMLLoader.getDist() == Dist.DEDICATED_SERVER) {
+                        file.getScanResult().getAnnotations().iterator().forEachRemaining(annotationData -> {
+                            if (annotationData.getAnnotationType().getClassName().equals(OnlyIn.class.getCanonicalName())
+                                    && annotationData.getTargetType() == ElementType.TYPE
+                                    && ((ModAnnotation.EnumHolder) annotationData.getAnnotationData().get("value")).getValue().equals(Dist.CLIENT.name())) {
+
+                                blackList.add(annotationData.getClassType().getClassName());
+                            }
+                        });
+                    }
+
                     ArrayList<ModFileScanData.ClassData> classDatas = new ArrayList<>(file.getScanResult().getClasses());
                     for (ModFileScanData.ClassData classData : classDatas) {
                         Field fieldClazz = null;
@@ -43,8 +60,10 @@ public abstract class ReflectionUtils {
                             fieldClazz = ModFileScanData.ClassData.class.getDeclaredField("clazz");
                             fieldClazz.setAccessible(true);
                             Type typeClazz = (Type) fieldClazz.get(classData);
-                            Class<?> aClass = Class.forName(typeClazz.getClassName());
-                            classes.add(aClass);
+                            if (!blackList.contains(typeClazz.getClassName())) {
+                                Class<?> aClass = Class.forName(typeClazz.getClassName());
+                                classes.add(aClass);
+                            }
                         } catch (Throwable e) {
                             LOGGER.error("Error getting info for class: " + (fieldClazz != null ? fieldClazz.getName() : "unknown"));
                             LogUtils.printError(LOGGER, e);
