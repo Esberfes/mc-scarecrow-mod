@@ -1,6 +1,8 @@
 package mc.scarecrow.lib.utils;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
+import mc.scarecrow.lib.gui.VertexDrawerBuilder;
+import mc.scarecrow.lib.math.LibVectorBox;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.Direction;
@@ -9,6 +11,8 @@ import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.util.math.vector.Vector3i;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+
+import java.util.function.Supplier;
 
 @OnlyIn(Dist.CLIENT)
 public abstract class UIUtils {
@@ -43,7 +47,7 @@ public abstract class UIUtils {
      * @param color       Integer representation of a color, use static Color.fromInt() or from instance color.getColor(), Color.fromHex("#FFFFFF").getColor()
      */
     public static void drawText(FontRenderer font, MatrixStack matrixStack, String text, Float xPosition, Float yPosition, Integer color) {
-        font.drawStringWithShadow(matrixStack, text, xPosition, yPosition, color);
+        font.drawString(matrixStack, text, xPosition, yPosition, color);
     }
 
     public static double calcAngle(Direction direction, double target, double lastYaw, int delta) {
@@ -93,5 +97,37 @@ public abstract class UIUtils {
         }
 
         return dirAngle;
+    }
+
+    public static void drawGradientRectIf(int x0, int y0, int x1, int y1, int colour0, int colour1, Supplier<Boolean> supplier) {
+        if (supplier.get())
+            drawGradientRect(x0, y0, x1, y1, colour0, colour1);
+    }
+
+    public static void drawGradientRect(int x0, int y0, int x1, int y1, int colour0, int colour1) {
+        float alpha0 = (colour0 >> 24 & 255) / 255.0F;
+        float blue0 = (colour0 >> 16 & 255) / 255.0F;
+        float green0 = (colour0 >> 8 & 255) / 255.0F;
+        float red0 = (colour0 & 255) / 255.0F;
+        float alpha1 = (colour1 >> 24 & 255) / 255.0F;
+        float blue1 = (colour1 >> 16 & 255) / 255.0F;
+        float green1 = (colour1 >> 8 & 255) / 255.0F;
+        float red1 = (colour1 & 255) / 255.0F;
+
+        VertexDrawerBuilder.builder()
+                .vertex(x1, y0, blue0, green0, red0, alpha0)
+                .vertex(x0, y0, blue0, green0, red0, alpha0)
+                .vertex(x0, y1, blue1, green1, red1, alpha1)
+                .vertex(x1, y1, blue1, green1, red1, alpha1)
+                .draw();
+    }
+
+    public static void drawBox(LibVectorBox box, int z, float red, float green, float blue, float alpha) {
+        VertexDrawerBuilder.builder(z)
+                .vertex(box.getRightTop().getXd(), box.getRightTop().getYd(), red, green, blue, alpha)
+                .vertex(box.getLeftTop().getXd(), box.getLeftTop().getYd(), red, green, blue, alpha)
+                .vertex(box.getLeftBottom().getXd(), box.getLeftBottom().getYd(), red, green, blue, alpha)
+                .vertex(box.getRightBottom().getXd(), box.getRightBottom().getYd(), red, green, blue, alpha)
+                .draw();
     }
 }

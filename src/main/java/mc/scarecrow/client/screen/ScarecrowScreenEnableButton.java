@@ -13,7 +13,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import static mc.scarecrow.client.screen.OnButtonPressedCommandConsumer.networkCommandSubscription;
 import static mc.scarecrow.client.screen.ScarecrowScreen.GUI;
 import static mc.scarecrow.constant.ScarecrowScreenConstants.*;
-import static mc.scarecrow.lib.utils.GuiUtils.drawGradientRectIf;
+import static mc.scarecrow.lib.utils.UIUtils.drawGradientRectIf;
 
 @OnlyIn(Dist.CLIENT)
 public class ScarecrowScreenEnableButton extends AbstractButton {

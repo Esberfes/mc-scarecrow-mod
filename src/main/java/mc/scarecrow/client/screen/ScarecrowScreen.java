@@ -4,17 +4,22 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import mc.scarecrow.common.block.container.ScarecrowContainer;
 import mc.scarecrow.common.block.tile.ScarecrowTile;
+import mc.scarecrow.lib.builder.screen.BuilderLayerScreen;
 import mc.scarecrow.lib.core.libinitializer.LibInject;
 import mc.scarecrow.lib.screen.LibContainerScreenBase;
 import mc.scarecrow.lib.utils.LogUtils;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.widget.button.AbstractButton;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.logging.log4j.Logger;
+
+import java.util.function.BiConsumer;
 
 import static mc.scarecrow.constant.ScarecrowModConstants.MOD_IDENTIFIER;
 import static mc.scarecrow.constant.ScarecrowScreenConstants.*;
@@ -67,6 +72,17 @@ public class ScarecrowScreen extends LibContainerScreenBase {
         this.scarecrowScreenEnableButton
                 = new ScarecrowScreenEnableButton(this.centeredGuiX + 160, this.centeredGuiY + 70, tile.getPos());
         this.addButton(scarecrowScreenEnableButton);
+        this.addButton(new AbstractButton(guiLeft + this.xSize - 25, guiTop + 5, 20, 20, new StringTextComponent("")) {
+            @Override
+            public void onPress() {
+                Minecraft.getInstance().displayGuiScreen(new BuilderLayerScreen());
+            }
+
+            @Override
+            public void blitBlackOutline(int width, int height, BiConsumer<Integer, Integer> boxXYConsumer) {
+                super.blitBlackOutline(width, height, boxXYConsumer);
+            }
+        });
     }
 
     @Override
