@@ -1,13 +1,18 @@
 package mc.scarecrow.lib.builder.screen;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
+import mc.scarecrow.lib.builder.LayerVector;
 import mc.scarecrow.lib.core.libinitializer.ILibInstanceHandler;
 import mc.scarecrow.lib.math.LibVector2D;
 import mc.scarecrow.lib.math.LibVectorBox;
-import mc.scarecrow.lib.screen.gui.widget.ILibWidget;
-import mc.scarecrow.lib.screen.gui.widget.LibWidgetEventPropagationCanceler;
+import mc.scarecrow.lib.screen.gui.widget.base.ILibWidget;
+import mc.scarecrow.lib.screen.gui.widget.event.LibWidgetEventPropagationCanceler;
+import mc.scarecrow.lib.screen.gui.widget.event.observer.LibObservable;
+import net.minecraft.item.Item;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+
+import java.util.function.Supplier;
 
 import static mc.scarecrow.lib.utils.UIUtils.drawBox;
 
@@ -23,9 +28,13 @@ public class BuilderLayerScreenGridCell implements ILibWidget {
     private boolean clicked;
     private long lastUpdate;
     private int z;
+    private Supplier<Item> itemSupplier;
+    private LibObservable<LayerVector> layerVector;
 
-    public BuilderLayerScreenGridCell(LibVectorBox dimensions) {
+    public BuilderLayerScreenGridCell(LibVectorBox dimensions, Supplier<Item> itemSupplier, LibObservable<LayerVector> layerVector) {
         this.dimensions = dimensions;
+        this.itemSupplier = itemSupplier;
+        this.layerVector = layerVector;
     }
 
     @Override
@@ -73,6 +82,7 @@ public class BuilderLayerScreenGridCell implements ILibWidget {
     @Override
     public void onClick(LibVector2D vector2D, int button) {
         this.clicked = true;
+        this.layerVector.set(l -> l.setItem(Item.getIdFromItem(itemSupplier.get())));
         LibWidgetEventPropagationCanceler.cancelPropagation();
     }
 
@@ -88,5 +98,9 @@ public class BuilderLayerScreenGridCell implements ILibWidget {
             this.isHovering = false;
             LibWidgetEventPropagationCanceler.cancelPropagation();
         }
+    }
+
+    public int getItem() {
+        return layerVector.get().getItem();
     }
 }

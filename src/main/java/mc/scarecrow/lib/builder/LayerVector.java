@@ -1,71 +1,67 @@
 package mc.scarecrow.lib.builder;
 
+import mc.scarecrow.lib.math.LibVector3D;
 import net.minecraft.util.math.BlockPos;
 
+import java.util.Comparator;
 import java.util.Objects;
 
-public class LayerVector implements Comparable<LayerVector> {
+public class LayerVector implements Comparable<LayerVector>, Comparator<LayerVector> {
 
-    private final int x;
-    private final int z;
-    private final int itemId;
+    private LibVector3D position;
+    private int item;
 
-    public LayerVector(int x, int z, int itemId) {
-        this.x = x;
-        this.z = z;
-        this.itemId = itemId;
+    public LayerVector(int x, int y, int z, int itemId) {
+        this.position = new LibVector3D(x, y, z);
+        this.item = itemId;
     }
 
-    public int getX() {
-        return x;
-    }
-
-    public int getZ() {
-        return z;
-    }
-
-    public int getItemId() {
-        return itemId;
+    public int getItem() {
+        return item;
     }
 
     public BlockPos toRelativeBlockPos(int rx, int ry, int rz) {
         return new BlockPos(
-                rx + x,
-                ry,
-                rz + z);
+                rx + this.position.getX(),
+                ry + this.position.getY(),
+                rz + this.position.getZ());
+    }
+
+    public void setItem(int item) {
+        this.item = item;
+    }
+
+    @Override
+    public int compare(LayerVector o1, LayerVector o2) {
+        return o1.compareTo(o2);
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+
         LayerVector that = (LayerVector) o;
-        return x == that.x &&
-                z == that.z;
+        return that.equals(this);
+    }
+
+    public LibVector3D getPosition() {
+        return position;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(x, z);
+        return Objects.hash(this.position, this.item);
     }
 
     @Override
     public int compareTo(LayerVector o) {
-        if (x > o.x || (x == o.x && z > o.z))
+        if (this.position.getY() > o.position.getY())
             return 1;
 
-        if (x < o.x || z < o.z)
+        if (this.position.getY() < o.position.getY())
             return -1;
 
-        return 0;
-    }
-
-    @Override
-    public String toString() {
-        return "LayerVector{" +
-                "x=" + x +
-                ", z=" + z +
-                ", itemId=" + itemId +
-                '}';
+        return position.compareTo(o.position);
     }
 }

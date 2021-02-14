@@ -1,7 +1,8 @@
-package mc.scarecrow.lib.screen.gui.widget;
+package mc.scarecrow.lib.screen.gui.widget.focus;
 
 import mc.scarecrow.lib.math.LibVector2D;
 import mc.scarecrow.lib.math.LibVectorBox;
+import mc.scarecrow.lib.screen.gui.widget.event.ILibWidgetFocusable;
 
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -9,7 +10,7 @@ import java.util.function.Supplier;
 public class FocusToken {
 
     private ILibWidgetFocusable owner;
-    private Supplier<LibVector2D> positionSupplier;
+    private final Supplier<LibVector2D> positionSupplier;
 
     public FocusToken(Supplier<LibVector2D> positionSupplier) {
         this.positionSupplier = positionSupplier;
@@ -58,6 +59,7 @@ public class FocusToken {
 
     /**
      * Maybe dangerous... TODO think about this
+     *
      */
     public synchronized void forceRelease() {
         if (owner != null)

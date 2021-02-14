@@ -10,8 +10,8 @@ public class LibVectorBox {
     private final LibVector2D leftBottom;
     private final LibVector2D rightTop;
     private final LibVector2D rightBottom;
-    private final int height;
-    private final int wight;
+    private final float height;
+    private final float wight;
 
     public LibVectorBox(int x0, int x1, int y0, int y1) {
         this.leftTop = new LibVector2D(x0, y0);
@@ -66,10 +66,24 @@ public class LibVectorBox {
     }
 
     public boolean isCollisionTo(LibVector2D vector2D) {
-        return vector2D.getXd() >= this.getLeftTop().getXd()
-                && vector2D.getXd() <= this.getRightTop().getXd()
-                && vector2D.getYd() >= this.getLeftTop().getYd()
-                && vector2D.getYd() <= this.getLeftBottom().getYd();
+        return vector2D.getX() >= this.getLeftTop().getX()
+                && vector2D.getX() <= this.getRightTop().getX()
+                && vector2D.getY() >= this.getLeftTop().getY()
+                && vector2D.getY() <= this.getLeftBottom().getY();
+    }
+
+    public boolean isCollisionTo(LibVectorBox box) {
+        return isCollisionTo(box.getLeftTop())
+                || isCollisionTo(box.getLeftBottom())
+                || isCollisionTo(box.getRightTop())
+                || isCollisionTo(box.getLeftBottom());
+    }
+
+    public boolean isInsideTo(LibVectorBox box) {
+        return box.isCollisionTo(getLeftTop())
+                && box.isCollisionTo(getLeftBottom())
+                && box.isCollisionTo(getRightTop())
+                && box.isCollisionTo(getLeftBottom());
     }
 
     public LibVectorBox relative() {
@@ -112,31 +126,45 @@ public class LibVectorBox {
         return new LibVectorBox(this.leftTop, this.leftBottom, this.rightTop, this.rightBottom.add(x, y));
     }
 
-    public LibVectorBox flipY() {
+    public LibVectorBox moveTo(float x, float y) {
+        float yLeftDiff = y - this.leftTop.getY();
+        float xLeftDiff = x - this.leftTop.getX();
+
         return new LibVectorBox(
-                new LibVector2D(this.leftTop.getXd(), this.rightTop.getYd()),
-                new LibVector2D(this.leftBottom.getXd(), this.rightBottom.getYd()),
-                new LibVector2D(this.rightTop.getXd(), this.leftTop.getYd()),
-                new LibVector2D(this.rightBottom.getXd(), this.leftBottom.getYd())
+                new LibVector2D(x, y),
+                new LibVector2D(this.leftBottom.add(xLeftDiff, yLeftDiff)),
+                new LibVector2D(this.rightTop.add(xLeftDiff, yLeftDiff)),
+                new LibVector2D(this.rightBottom.add(xLeftDiff, yLeftDiff))
         );
     }
 
-    public LibVectorBox centered(LibVectorBox other) {
-        float ownCenterX = (this.rightTop.getXd() - this.leftBottom.getXd()) / 2F;
-        float ownCenterY = (this.leftBottom.getYd() - this.rightTop.getXd()) / 2F;
-        float otherCenterX = (other.rightTop.getXd() - other.leftBottom.getXd()) / 2F;
-        float otherCenterY = (other.leftBottom.getYd() - other.rightTop.getXd()) / 2F;
+    public LibVectorBox flipY() {
+        return new LibVectorBox(
+                new LibVector2D(this.leftTop.getX(), this.rightTop.getY()),
+                new LibVector2D(this.leftBottom.getX(), this.rightBottom.getY()),
+                new LibVector2D(this.rightTop.getX(), this.leftTop.getY()),
+                new LibVector2D(this.rightBottom.getX(), this.leftBottom.getY())
+        );
 
-
-        return move(otherCenterX > ownCenterX ? otherCenterX - ownCenterX : ownCenterX - otherCenterX,
-                otherCenterY > ownCenterY ? otherCenterY - ownCenterY : ownCenterY - otherCenterY);
     }
 
-    public int getHeight() {
+    public LibVectorBox centered(LibVectorBox other) {
+        LibVectorBox result = relative();
+
+        float heightDiff = (other.height) - (this.height);
+        float weighDiff = (other.wight) - (this.wight);
+
+
+        return result.moveTo(other.getLeftTop().getX() + (weighDiff / 2), other.getLeftTop().getY() + (heightDiff / 2));
+
+        // return result.move(0, result.height / 2F);
+    }
+
+    public float getHeight() {
         return height;
     }
 
-    public int getWight() {
+    public float getWight() {
         return wight;
     }
 

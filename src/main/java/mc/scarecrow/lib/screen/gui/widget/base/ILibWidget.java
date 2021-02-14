@@ -1,7 +1,8 @@
-package mc.scarecrow.lib.screen.gui.widget;
+package mc.scarecrow.lib.screen.gui.widget.base;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import mc.scarecrow.lib.math.LibVectorBox;
+import mc.scarecrow.lib.screen.gui.widget.event.ILibWidgetEventListener;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 

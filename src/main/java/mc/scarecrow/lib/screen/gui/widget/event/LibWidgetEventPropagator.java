@@ -1,6 +1,8 @@
-package mc.scarecrow.lib.screen.gui.widget;
+package mc.scarecrow.lib.screen.gui.widget.event;
 
 import mc.scarecrow.lib.math.LibVector2D;
+import mc.scarecrow.lib.screen.gui.widget.base.ILibWidget;
+import mc.scarecrow.lib.screen.gui.widget.focus.FocusToken;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -39,8 +41,7 @@ public class LibWidgetEventPropagator implements ILibWidgetEventListener {
                     .sorted(ILibWidgetEventListener.getPriorityComparator())
                     .collect(Collectors.toList())) {
                 try {
-                    if (widget.getDimensionsBox().isCollisionTo(position))
-                        widget.onClickRelease(position, button);
+                    widget.onClickRelease(position, button);
 
                 } catch (LibWidgetEventPropagationCanceler ignore) {
                     // Not cancellable

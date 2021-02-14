@@ -17,7 +17,7 @@ public class BuilderLayerScreenCloseButton extends AbstractButton {
     private final Runnable action;
 
     public BuilderLayerScreenCloseButton(LibVector2D position, Runnable action) {
-        super(position.getX() - 12, position.getY(), 12, 12, new StringTextComponent("x"));
+        super((int) position.getX() - 12, (int) position.getY(), 12, 12, new StringTextComponent("x"));
         this.action = action;
     }
 

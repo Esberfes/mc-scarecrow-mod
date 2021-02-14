@@ -1,21 +1,21 @@
-package mc.scarecrow.lib.builder.screen;
+package mc.scarecrow.lib.screen.gui.render.font;
 
 
-public class TextBuffer {
+public class LibTextBuffer {
     private final char[] m_text;
 
-    public TextBuffer(char c, int length) {
+    public LibTextBuffer(char c, int length) {
         m_text = new char[length];
         for (int i = 0; i < length; i++) {
             m_text[i] = c;
         }
     }
 
-    public TextBuffer(String text) {
+    public LibTextBuffer(String text) {
         this(text, 1);
     }
 
-    public TextBuffer(String text, int repetitions) {
+    public LibTextBuffer(String text, int repetitions) {
         int textLength = text.length();
         m_text = new char[textLength * repetitions];
         for (int i = 0; i < repetitions; i++) {
@@ -25,11 +25,11 @@ public class TextBuffer {
         }
     }
 
-    public TextBuffer(TextBuffer text) {
+    public LibTextBuffer(LibTextBuffer text) {
         this(text, 1);
     }
 
-    public TextBuffer(TextBuffer text, int repetitions) {
+    public LibTextBuffer(LibTextBuffer text, int repetitions) {
         int textLength = text.length();
         m_text = new char[textLength * repetitions];
         for (int i = 0; i < repetitions; i++) {
@@ -76,15 +76,15 @@ public class TextBuffer {
         }
     }
 
-    public void write(TextBuffer text) {
+    public void write(LibTextBuffer text) {
         write(text, 0, text.length());
     }
 
-    public void write(TextBuffer text, int start) {
+    public void write(LibTextBuffer text, int start) {
         write(text, start, start + text.length());
     }
 
-    public void write(TextBuffer text, int start, int end) {
+    public void write(LibTextBuffer text, int start, int end) {
         int pos = start;
         start = Math.max(start, 0);
         end = Math.min(end, pos + text.length());
@@ -129,15 +129,15 @@ public class TextBuffer {
         }
     }
 
-    public void fill(TextBuffer text) {
+    public void fill(LibTextBuffer text) {
         fill(text, 0, m_text.length);
     }
 
-    public void fill(TextBuffer text, int start) {
+    public void fill(LibTextBuffer text, int start) {
         fill(text, start, m_text.length);
     }
 
-    public void fill(TextBuffer text, int start, int end) {
+    public void fill(LibTextBuffer text, int start, int end) {
         int pos = start;
         start = Math.max(start, 0);
         end = Math.min(end, m_text.length);

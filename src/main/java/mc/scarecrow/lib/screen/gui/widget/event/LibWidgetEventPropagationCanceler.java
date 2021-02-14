@@ -1,4 +1,4 @@
-package mc.scarecrow.lib.screen.gui.widget;
+package mc.scarecrow.lib.screen.gui.widget.event;
 
 import java.util.concurrent.CancellationException;
 

@@ -1,4 +1,4 @@
-package mc.scarecrow.lib.screen.gui.widget;
+package mc.scarecrow.lib.screen.gui.widget.implementation;
 
 import java.io.Closeable;
 import java.util.concurrent.Executors;
@@ -25,7 +25,6 @@ public class LibWidgetAnimator<T> implements Runnable, Closeable {
         this.running = new AtomicBoolean(false);
         this.executorService = Executors.newSingleThreadScheduledExecutor();
         this.executorService.scheduleAtFixedRate(this, 0, interval, TimeUnit.MILLISECONDS);
-
     }
 
     @Override

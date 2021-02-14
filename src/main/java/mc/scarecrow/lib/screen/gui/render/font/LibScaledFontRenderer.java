@@ -1,8 +1,7 @@
-package mc.scarecrow.lib.screen.gui;
+package mc.scarecrow.lib.screen.gui.render.font;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.IVertexBuilder;
-import mc.scarecrow.lib.builder.screen.TextBuffer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.RenderState;
@@ -19,10 +18,10 @@ import org.lwjgl.opengl.GL11;
 import static mc.scarecrow.constant.ScarecrowModConstants.MOD_IDENTIFIER;
 
 @OnlyIn(Dist.CLIENT)
-public class FixedWidthFontRenderer {
+public class LibScaledFontRenderer {
+
     private static final Matrix4f IDENTITY = TransformationMatrix.identity().getMatrix();
     public static final ResourceLocation FONT = new ResourceLocation(MOD_IDENTIFIER, "textures/fonts/term_font.png");
-
 
     public static final float WIDTH = 256.0f;
     private static float scale = 0.7F;
@@ -35,11 +34,10 @@ public class FixedWidthFontRenderer {
     public static float OUT_FONT_WIDTH = FONT_WIDTH * scale;
     public static float OUT_FONT_HEIGHT = FONT_HEIGHT * scale;
 
-    private FixedWidthFontRenderer() {
+    private LibScaledFontRenderer() {
     }
 
-
-    public static void drawString(Matrix4f transform, IVertexBuilder renderer, float x, float y, int z, TextBuffer text) {
+    public static void drawString(Matrix4f transform, IVertexBuilder renderer, float x, float y, int z, LibTextBuffer text) {
         for (int i = 0; i < text.length(); i++) {
             // Draw char
             int index = text.charAt(i);
@@ -49,7 +47,7 @@ public class FixedWidthFontRenderer {
 
     }
 
-    public static void drawString(float x, float y, int z, TextBuffer text) {
+    public static void drawString(float x, float y, int z, LibTextBuffer text) {
         bindFont();
         Matrix4f transform = TransformationMatrix.identity().getMatrix();
         IRenderTypeBuffer.Impl renderer = Minecraft.getInstance().getRenderTypeBuffers().getBufferSource();

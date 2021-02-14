@@ -7,7 +7,6 @@ import mc.scarecrow.lib.builder.listener.BuildLayerOnFinishListener;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.item.Item;
-import net.minecraft.item.Items;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.server.ServerWorld;
 
@@ -70,7 +69,7 @@ public class BuilderLayer {
                 int currentDelay = delay.addAndGet(this.delay);
 
                 futures.add(scheduledExecutorService.schedule(() -> {
-                    BlockState blockState = fromItem(getItemById(layerVector.getItemId()));
+                    BlockState blockState = fromItem(getItemById(layerVector.getItem()));
                     world.setBlockState(relativeBlockPos, blockState, 3);
 
                     if (onBlockListener != null)
@@ -83,16 +82,6 @@ public class BuilderLayer {
             for (Future<?> future : futures)
                 future.get();
             onFinishListener.onFinish();
-        }
-    }
-
-    public void fillTest() {
-        for (int y = 1; y <= 3; y++) {
-            for (int x = 0; x < 10; x++) {
-                for (int z = 0; z < 10; z++) {
-                    put(y, new LayerVector(x, z, getIdByItem(fromItem(Items.ACACIA_LOG).getBlock().asItem())));
-                }
-            }
         }
     }
 

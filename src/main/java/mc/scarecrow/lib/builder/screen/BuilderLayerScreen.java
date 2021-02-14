@@ -1,121 +1,236 @@
 package mc.scarecrow.lib.builder.screen;
 
+import com.google.gson.*;
+import com.google.gson.reflect.TypeToken;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
+import mc.scarecrow.lib.builder.LayerVector;
 import mc.scarecrow.lib.core.libinitializer.ILibInstanceHandler;
 import mc.scarecrow.lib.core.libinitializer.LibInject;
 import mc.scarecrow.lib.math.LibVector2D;
+import mc.scarecrow.lib.math.LibVector3D;
 import mc.scarecrow.lib.math.LibVectorBox;
-import mc.scarecrow.lib.math.LibVectorBoxFactory;
-import mc.scarecrow.lib.screen.gui.LibBaseGui;
-import mc.scarecrow.lib.screen.gui.widget.LibWidgetList;
+import mc.scarecrow.lib.proxy.Proxy;
+import mc.scarecrow.lib.screen.gui.screen.LibBaseScreen;
+import mc.scarecrow.lib.screen.gui.widget.event.observer.LibObservable;
+import mc.scarecrow.lib.screen.gui.widget.implementation.LibWidgetList;
+import mc.scarecrow.lib.screen.gui.widget.implementation.LibWidgetPanel;
+import mc.scarecrow.lib.utils.LogUtils;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.item.BlockItem;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
-import net.minecraft.util.IReorderingProcessor;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.LanguageMap;
-import net.minecraft.util.text.Style;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.gui.ScrollPanel;
-import net.minecraftforge.common.ForgeHooks;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.apache.logging.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.lang.reflect.Type;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 @OnlyIn(Dist.CLIENT)
-public class BuilderLayerScreen extends LibBaseGui {
+public class BuilderLayerScreen extends LibBaseScreen {
     {
         ILibInstanceHandler.fire(this);
     }
 
+    private Gson gson = new GsonBuilder().registerTypeAdapter(Integer.class, new TypeAdapter()).create();
     @LibInject
     private Logger logger;
-
-    private LibVector2D bounds;
-    private LibVector2D gameBounds;
-    private LibVectorBox box;
     private List<BuilderLayerScreenGridCell> cells;
-
-    private int cellSize = 10;
-    private int xElements;
-    private int yElements;
-    private int startX;
-    private int startY;
+    private int selectedId;
+    private final AtomicInteger currentLayer;
+    private Map<Integer, TreeSet<LayerVector>> stored;
 
     public BuilderLayerScreen() {
-
+        this.currentLayer = new AtomicInteger(0);
     }
 
+    static class TypeAdapter implements JsonDeserializer<Integer> {
+        @Override
+        public Integer deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+            return json.getAsInt();
+        }
+    }
 
     @Override
     protected void init() {
         super.init();
-
-        this.gameBounds = new LibVector2D(
-                Minecraft.getInstance().getMainWindow().getScaledWidth(),
-                Minecraft.getInstance().getMainWindow().getScaledHeight()
-        );
-        this.width = this.gameBounds.getX() * 90 / 100;
-        this.height = this.gameBounds.getY() * 80 / 100;
-        this.bounds = new LibVector2D(this.width, this.height);
-        this.box = new LibVectorBox(
-                (this.gameBounds.getX() - this.width) / 2,
-                ((this.gameBounds.getX() - this.width) / 2) + this.width,
-                (this.gameBounds.getY() - this.height) / 2,
-                ((this.gameBounds.getY() - this.height) / 2) + this.height
-        );
-
-        LibVector2D buttonPos = LibVectorBoxFactory.TOP_RIGHT.build(this.box, 0);
-
+        final float bottomMenuHeight = 30F;
+        final float rightItemListWidth = 100F;
+        final float cellSize = 12F;
+        final float margin = 1F;
+        final float cellTotalSize = cellSize + (margin * 2);
+        final float totalBottomMenuHeight = bottomMenuHeight + (margin * 2);
+        final float totalRightItemListWidth = rightItemListWidth + (margin * 2);
         this.cells = new LinkedList<>();
-        this.cellSize = 10;
-        this.xElements = ((this.width - ((cellSize + 1) * 2)) / (cellSize + 1)) - 11;
-        this.yElements = (this.height - ((cellSize + 1) * 2)) / (cellSize + 1);
-        this.startX = this.box.getLeftTop().getX() + cellSize;
-        this.startY = this.box.getLeftTop().getY() + cellSize;
+        this.stored = new LinkedHashMap<>();
+        PlayerEntity playerEntity = Proxy.PROXY.getPlayerEntity();
 
-        final int increment = cellSize + 2;
-        LibVectorBox cellBox = this.box.relative().withSizeToRight(cellSize).withSizeToBottom(cellSize);
+        LibVector2D gameBounds = new LibVector2D(
+                Minecraft.getInstance().getMainWindow().getScaledWidth(),
+                Minecraft.getInstance().getMainWindow().getScaledHeight());
+
+        this.width = (int) (gameBounds.getX() * 90 / 100);
+        this.height = (int) (gameBounds.getY() * 85 / 100);
+        LibVector2D bounds = new LibVector2D(this.width, this.height);
+        float moveToTop = (gameBounds.getY() * 5 / 100);
+
+        LibVectorBox box = new LibVectorBox(
+                (gameBounds.getX() - this.width) / 2,
+                ((gameBounds.getX() - this.width) / 2) + this.width,
+                (gameBounds.getY() - this.height) / 2,
+                ((gameBounds.getY() - this.height) / 2) + this.height
+        ).move(0F, -moveToTop);
+
+        int xElements = (int) ((box.relative().getWight() - rightItemListWidth) / cellTotalSize);
+        int yElements = (int) ((box.getHeight() - totalBottomMenuHeight) / cellTotalSize);
+
+        // Grd container
+        LibVectorBox gridBox = box.relative()
+                .withSizeToBottom(box.getHeight() - totalBottomMenuHeight)
+                .withSizeToRight(box.getWight() - totalRightItemListWidth);
+        this.addWidget(new LibWidgetPanel(gridBox, 1, 255, 255, 255, 0F));
+
+        this.stored = read();
+        TreeSet<LayerVector> layerVectors = stored.computeIfAbsent(BuilderLayerScreen.this.currentLayer.get(), (e) -> new TreeSet<>());
+
+        // Grid cells
+        LibVectorBox cellBox = box.relative().withSizeToRight(cellSize).withSizeToBottom(cellSize);
         LibVectorBox cellBoxMutate;
-        for (int y = 0; y < yElements; y++) {
-            cellBoxMutate = cellBox.relative().move(0, increment * y);
+        for (int z = 0; z < yElements; z++) {
+            cellBoxMutate = cellBox.relative().move(0, cellTotalSize * z);
             for (int x = 0; x < xElements; x++) {
-                BuilderLayerScreenGridCell cell = new BuilderLayerScreenGridCell(cellBoxMutate);
-                cellBoxMutate = cellBoxMutate.move(increment, 0);
+                int finalX = x;
+                int finalZ = z;
+                LayerVector layerVector = layerVectors.stream()
+                        .filter(l -> l.getPosition().equals(new LibVector3D((float) finalX, currentLayer.get(), finalZ)))
+                        .findFirst().orElse(new LayerVector(x, BuilderLayerScreen.this.currentLayer.get(), z, Item.getIdFromItem(Items.AIR)));
+
+                BuilderLayerScreenGridCell cell = new BuilderLayerScreenGridCell(cellBoxMutate, () -> Item.getItemById(selectedId), new LibObservable.Builder<LayerVector>()
+                        .observer((libObservable, newValue) -> {
+                            try {
+                                stored = read();
+                                synchronized (BuilderLayerScreen.this) {
+                                    TreeSet<LayerVector> layerVectors1 = stored.computeIfAbsent(BuilderLayerScreen.this.currentLayer.get(), (e) -> new TreeSet<>());
+                                    layerVectors1.remove(newValue);
+                                    layerVectors1.add(newValue);
+                                }
+                                write(stored);
+                            } catch (Throwable e) {
+                                LogUtils.printError(logger, e);
+                            }
+                        })
+                        .value(layerVector)
+                        .build());
+                cells.add(cell);
+                cellBoxMutate = cellBoxMutate.move(cellTotalSize, 0);
                 this.addWidget(cell);
                 cell.init();
             }
         }
 
-        LibWidgetList libWidgetList = new LibWidgetList(
-                this.box.relative()
-                        .withSizeToLeft(100)
-                        .move(-20, 0)
-                        .withSizeToBottom((yElements * increment) - 2),
-                2, 225, 226, 225, 1);
+        // Right item list
+        selectedId = Item.getIdFromItem(Items.AIR);
+        LibWidgetList libWidgetList = new LibWidgetList(box.relative()
+                .withSizeToLeft(100)
+                .withSizeToBottom(gridBox.getHeight()),
+                2, 225, 226, 225, 1, (libObservable, newValue) -> selectedId = newValue);
 
         this.addWidget(libWidgetList);
         libWidgetList.init();
+
+        // Bottom menu
+        LibVectorBox bottomMenuBox = box.relative().withSizeToTop(bottomMenuHeight);
+        LibWidgetPanel bottomPanel = new LibWidgetPanel(bottomMenuBox, 1, 225, 226, 225, 1);
+        this.addWidget(bottomPanel);
+        bottomPanel.init();
     }
 
     @Override
-    protected void onRenderWidgetsEnd(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-      /* VertexDrawerBuilder.builder()
-                .vertex(this.box.getRightTop().getX(), this.box.getRightTop().getY(), 207, 216, 220, 0.8F)
-                .vertex(this.box.getLeftTop().getX(), this.box.getLeftTop().getY(), 207, 216, 220, 0.8F)
-                .vertex(this.box.getLeftBottom().getX(), this.box.getLeftBottom().getY(), 207, 216, 220, 0.8F)
-                .vertex(this.box.getRightBottom().getX(), this.box.getRightBottom().getY(), 207, 216, 220, 0.8F)
-                .draw();
+    public void onClose() {
+        super.onClose();
+        write(this.stored);
+    }
 
-        this.layerScreenScroll.render(matrixStack, mouseX, mouseY, partialTicks);*/
+    private Map<Integer, TreeSet<LayerVector>> read() {
+        synchronized (this) {
+            try {
+                File store = new File("./store");
+                if (!store.exists())
+                    return new LinkedHashMap<>();
+
+                File save = new File(store.getAbsolutePath() + "/" + "save.json");
+
+                if (!save.exists())
+                    return new LinkedHashMap<>();
+
+                try (FileInputStream fis = new FileInputStream(save)) {
+                    StringBuilder buffer = new StringBuilder();
+                    int character;
+                    while ((character = fis.read()) != -1)
+                        buffer.append((char) character);
+
+                    Map<Integer, TreeSet<LayerVector>> o = gson.fromJson(buffer.toString(), new TypeToken<Map<Integer, TreeSet<LayerVector>>>() {
+                    }.getType());
+                    if (o != null)
+                        return o;
+                }
+
+            } catch (Throwable e) {
+                LogUtils.printError(logger, e);
+            }
+
+            return new LinkedHashMap<>();
+        }
+    }
+
+    private void write(Map<Integer, TreeSet<LayerVector>> data) {
+        synchronized (this) {
+            try {
+                File store = new File("./store");
+                if (!store.exists())
+                    if (!store.mkdir())
+                        throw new Exception("Unable to create store dir");
+
+                File save = new File(store.getAbsolutePath() + "/" + "save.json");
+                if (!save.exists())
+                    if (!save.createNewFile())
+                        throw new Exception("Unable to create save file");
+
+                try (FileWriter myWriter = new FileWriter(store.getAbsolutePath() + "/" + "save.json")) {
+                    myWriter.write(new Gson().toJson(data, new TypeToken<Map<Integer, TreeSet<LayerVector>>>() {
+                    }.getType()));
+                }
+            } catch (Throwable e) {
+                LogUtils.printError(logger, e);
+            }
+        }
+    }
+
+    @Override
+    public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+        float scale = 0.65F;
+        matrixStack.push();
+        RenderSystem.pushMatrix();
+        RenderSystem.scalef(scale, scale, 1F);
+        float reposition = 1F / scale;
+        float offSetY = 1F;
+        for (BuilderLayerScreenGridCell cell : this.cells) {
+            drawItemStack(Item.getItemById(cell.getItem()).getDefaultInstance(),
+                    (int) (cell.getDimensionsBox().getLeftTop().getX() * reposition),
+                    (int) ((cell.getDimensionsBox().getLeftTop().getY() * reposition) + offSetY));
+        }
+
+        RenderSystem.disableBlend();
+        RenderSystem.popMatrix();
+
+        super.render(matrixStack, mouseX, mouseY, partialTicks);
     }
 
     @Override
@@ -123,151 +238,12 @@ public class BuilderLayerScreen extends LibBaseGui {
         return false;
     }
 
-    class BuilderLayerScreeScroll extends ScrollPanel {
-
-        protected final int width;
-        protected final int height;
-        protected final int top;
-        protected int right;
-        protected int left;
-        private final List<IReorderingProcessor> lines;
-
-        protected float scrollDistance;
-        private final int barWidth = 6;
-        private final int barLeft;
-        private boolean scrolling;
-
-        public BuilderLayerScreeScroll(Minecraft client, int width, int height, int top, int left) {
-            super(client, width, height, top, left);
-            List<String> collect = ForgeRegistries.ITEMS.getEntries().stream()
-                    .filter(e -> e.getValue() instanceof BlockItem)
-                    .map(e -> e.getValue().getName().getString() + "::" + Item.getIdFromItem(e.getValue()))
-                    .collect(Collectors.toList());
-            this.lines = resizeContent(collect);
-            /*  this.client = client;*/
-            this.width = width;
-            this.height = height;
-            this.top = top;
-            this.left = left;
-
-            this.barLeft = this.left + this.width - barWidth;
-        }
-
-        @Override
-        protected int getContentHeight() {
-            int height = 50;
-            height += (lines.size() * font.FONT_HEIGHT);
-            if (height < this.bottom - this.top - 8)
-                height = this.bottom - this.top - 8;
-            return height;
-        }
-
-        @Override
-        protected int getScrollAmount() {
-            return font.FONT_HEIGHT * 3;
-        }
-
-
-        private List<IReorderingProcessor> resizeContent(List<String> lines) {
-            List<IReorderingProcessor> ret = new ArrayList<>();
-            for (String line : lines) {
-                if (line == null) {
-                    ret.add(null);
-                    continue;
-                }
-
-                ITextComponent chat = ForgeHooks.newChatWithLinks(line, false);
-                int maxTextLength = this.width - 12;
-                if (maxTextLength >= 0) {
-                    ret.addAll(LanguageMap.getInstance().func_244260_a(font.getCharacterManager().func_238362_b_(chat, maxTextLength, Style.EMPTY)));
-                }
-            }
-            return ret;
-        }
-
-        @Override
-        protected void drawPanel(MatrixStack mStack, int entryRight, int relativeY, Tessellator tess, int mouseX, int mouseY) {
-            for (IReorderingProcessor line : lines) {
-                if (line != null) {
-                    RenderSystem.enableBlend();
-                    BuilderLayerScreen.this.font.func_238407_a_(mStack, line, left + 5, relativeY, 0xFFFFFF);
-                    RenderSystem.disableAlphaTest();
-                    RenderSystem.disableBlend();
-                }
-                relativeY += font.FONT_HEIGHT;
-            }
-        }
-
-        @Override
-        public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            if (super.mouseClicked(mouseX, mouseY, button))
-                return true;
-
-            this.scrolling = button == 0 && mouseX >= barLeft && mouseX < barLeft + barWidth;
-            if (this.scrolling) {
-                return true;
-            }
-            int mouseListY = ((int) mouseY) - this.top - this.getContentHeight() + (int) this.scrollDistance - border;
-            if (mouseX >= left && mouseX <= right && mouseListY < 0) {
-                return this.clickPanel(mouseX - left, mouseY - this.top + (int) this.scrollDistance - border, button);
-            }
-            return false;
-        }
-
-        @Override
-        public boolean mouseReleased(double p_mouseReleased_1_, double p_mouseReleased_3_, int p_mouseReleased_5_) {
-            if (super.mouseReleased(p_mouseReleased_1_, p_mouseReleased_3_, p_mouseReleased_5_))
-                return true;
-            boolean ret = this.scrolling;
-            this.scrolling = false;
-            return ret;
-        }
-
-        @Override
-        public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-            if (this.scrolling) {
-                int maxScroll = height - getBarHeight();
-                double moved = deltaY / maxScroll;
-                this.scrollDistance += getMaxScroll() * moved;
-                applyScrollLimits();
-                return true;
-            }
-            return false;
-        }
-
-        private void applyScrollLimits() {
-            int max = getMaxScroll();
-
-            if (max < 0) {
-                max /= 2;
-            }
-
-            if (this.scrollDistance < 0.0F) {
-                this.scrollDistance = 0.0F;
-            }
-
-            if (this.scrollDistance > max) {
-                this.scrollDistance = max;
-            }
-        }
-
-        protected boolean clickPanel(double mouseX, double mouseY, int button) {
-            return false;
-        }
-
-        private int getMaxScroll() {
-            return this.getContentHeight() - (this.height - this.border);
-        }
-
-        private int getBarHeight() {
-            int barHeight = (height * height) / this.getContentHeight();
-
-            if (barHeight < 32) barHeight = 32;
-
-            if (barHeight > height - border * 2)
-                barHeight = height - border * 2;
-
-            return barHeight;
-        }
+    private void drawItemStack(ItemStack stack, int x, int y) {
+        this.itemRenderer.zLevel = 200.0F;
+        net.minecraft.client.gui.FontRenderer font = stack.getItem().getFontRenderer(stack);
+        if (font == null) font = this.font;
+        this.itemRenderer.renderItemAndEffectIntoGUI(stack, x, y);
+        this.itemRenderer.renderItemOverlayIntoGUI(font, stack, x, y, "");
+        this.itemRenderer.zLevel = 0.0F;
     }
 }

@@ -1,8 +1,8 @@
 package mc.scarecrow.lib.utils;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import mc.scarecrow.lib.gui.VertexDrawerBuilder;
 import mc.scarecrow.lib.math.LibVectorBox;
+import mc.scarecrow.lib.screen.gui.render.vertex.VertexDrawerBuilder;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.Direction;
@@ -124,10 +124,10 @@ public abstract class UIUtils {
 
     public static void drawBox(LibVectorBox box, int z, float red, float green, float blue, float alpha) {
         VertexDrawerBuilder.builder(z)
-                .vertex(box.getRightTop().getXd(), box.getRightTop().getYd(), red, green, blue, alpha)
-                .vertex(box.getLeftTop().getXd(), box.getLeftTop().getYd(), red, green, blue, alpha)
-                .vertex(box.getLeftBottom().getXd(), box.getLeftBottom().getYd(), red, green, blue, alpha)
-                .vertex(box.getRightBottom().getXd(), box.getRightBottom().getYd(), red, green, blue, alpha)
+                .vertex(box.getRightTop().getX(), box.getRightTop().getY(), red, green, blue, alpha)
+                .vertex(box.getLeftTop().getX(), box.getLeftTop().getY(), red, green, blue, alpha)
+                .vertex(box.getLeftBottom().getX(), box.getLeftBottom().getY(), red, green, blue, alpha)
+                .vertex(box.getRightBottom().getX(), box.getRightBottom().getY(), red, green, blue, alpha)
                 .draw();
     }
 }

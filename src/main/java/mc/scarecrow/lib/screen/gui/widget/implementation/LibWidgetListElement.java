@@ -1,13 +1,16 @@
-package mc.scarecrow.lib.screen.gui.widget;
+package mc.scarecrow.lib.screen.gui.widget.implementation;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
-import mc.scarecrow.lib.builder.screen.TextBuffer;
 import mc.scarecrow.lib.math.LibVector2D;
 import mc.scarecrow.lib.math.LibVectorBox;
-import mc.scarecrow.lib.screen.gui.FixedWidthFontRenderer;
+import mc.scarecrow.lib.screen.gui.render.font.LibScaledFontRenderer;
+import mc.scarecrow.lib.screen.gui.render.font.LibTextBuffer;
+import mc.scarecrow.lib.screen.gui.widget.base.ILibWidget;
+import mc.scarecrow.lib.screen.gui.widget.base.simple.LibBoxShadowWidget;
+import mc.scarecrow.lib.screen.gui.widget.event.LibWidgetEventPropagationCanceler;
 
-import static mc.scarecrow.lib.screen.gui.FixedWidthFontRenderer.OUT_FONT_HEIGHT;
-import static mc.scarecrow.lib.screen.gui.FixedWidthFontRenderer.OUT_FONT_WIDTH;
+import static mc.scarecrow.lib.screen.gui.render.font.LibScaledFontRenderer.OUT_FONT_HEIGHT;
+import static mc.scarecrow.lib.screen.gui.render.font.LibScaledFontRenderer.OUT_FONT_WIDTH;
 import static mc.scarecrow.lib.utils.UIUtils.drawBox;
 
 public class LibWidgetListElement implements ILibWidget {
@@ -64,7 +67,7 @@ public class LibWidgetListElement implements ILibWidget {
 
     @Override
     public void init() {
-        this.boxShadowWidget = new LibBoxShadowWidget(this.z, this.dimensions);
+        this.boxShadowWidget = new LibBoxShadowWidget(this.dimensions, this.z);
     }
 
     @Override
@@ -88,9 +91,9 @@ public class LibWidgetListElement implements ILibWidget {
 
         this.boxShadowWidget.render(matrixStack, mouseX, mouseY, partialTicks);
 
-        String text = (numeration != null ? numeration + "-" : "") + getText();
-        int maxWidth = dimensions.getWight() - 18;
-        int currentTextWidth = 0;
+        String text = (numeration != null ? numeration + " - " : "") + getText();
+        float maxWidth = dimensions.getWight() - (PADDING * 2);
+        float currentTextWidth = 0F;
         StringBuilder finalText = new StringBuilder();
 
         for (char character : text.toCharArray()) {
@@ -102,12 +105,12 @@ public class LibWidgetListElement implements ILibWidget {
             }
         }
 
-        TextBuffer textBuffer = new TextBuffer(finalText.toString());
-        FixedWidthFontRenderer.drawString(
-                dimensions.getLeftTop().getX() + 3,
+        LibTextBuffer libTextBuffer = new LibTextBuffer(finalText.toString());
+        LibScaledFontRenderer.drawString(
+                dimensions.getLeftTop().getX() + PADDING,
                 dimensions.getLeftTop().getY() + ((this.dimensions.getHeight() - OUT_FONT_HEIGHT) / 2),
                 this.z + 1,
-                textBuffer);
+                libTextBuffer);
     }
 
     @Override

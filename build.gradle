@@ -131,6 +131,9 @@ dependencies {
     // At runtime, use the full Hwyla jar
 //    compile fg.deobf("mcp.mobius.waila:Hwyla:1.10.11-B78_1.16.2")
     shadow "mcp.mobius.waila:Hwyla:1.10.11-B78_1.16.2:api"
+
+    // https://mvnrepository.com/artifact/javassist/javassist
+    compile group: 'javassist', name: 'javassist', version: '3.12.1.GA'
 }
 
 

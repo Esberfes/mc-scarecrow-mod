@@ -1,8 +1,12 @@
-package mc.scarecrow.lib.screen.gui.widget;
+package mc.scarecrow.lib.screen.gui.widget.implementation;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import mc.scarecrow.lib.math.LibVector2D;
 import mc.scarecrow.lib.math.LibVectorBox;
+import mc.scarecrow.lib.screen.gui.widget.base.ILibWidget;
+import mc.scarecrow.lib.screen.gui.widget.base.icon.IconDirection;
+import mc.scarecrow.lib.screen.gui.widget.base.simple.LibBoxShadowWidget;
+import mc.scarecrow.lib.screen.gui.widget.event.LibWidgetEventPropagationCanceler;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -21,11 +25,17 @@ public class LibWidgetButton implements ILibWidget {
     private AtomicBoolean pressing;
 
     private LibWidgetPanel outer;
-    private LibBoxShadowWidget boxShadowWidget;
-    private LibWidgetArrowIcon arrowIcon;
-    private LibWidgetArrowIcon.Direction direction;
+    private LibVectorBox outerDimensions;
 
-    public LibWidgetButton(LibVectorBox dimensions, int z, float red, float green, float blue, float alpha, LibWidgetArrowIcon.Direction direction) {
+    private LibBoxShadowWidget boxShadowWidget;
+
+    private LibWidgetArrowIcon arrowIcon;
+    private LibVectorBox arrowIconDimensions;
+
+    private IconDirection direction;
+    private LibWidgetAnimator<Void> animator;
+
+    public LibWidgetButton(LibVectorBox dimensions, int z, float red, float green, float blue, float alpha, IconDirection direction) {
         this.dimensions = dimensions;
         this.z = z;
         this.red = red;
@@ -36,25 +46,41 @@ public class LibWidgetButton implements ILibWidget {
         };
         this.pressing = new AtomicBoolean(false);
         this.direction = direction;
+        this.animator = new LibWidgetAnimator<>(this::onAnimate, () -> null, 300L, true);
+    }
+
+    private void onAnimate(Void unused) {
+
     }
 
     @Override
     public void init() {
-        this.outer = new LibWidgetPanel(dimensions, z, red, green, blue, alpha);
+        this.outerDimensions = dimensions.relative();
+        this.outer = new LibWidgetPanel(outerDimensions, z, red, green, blue, alpha);
         this.outer.init();
-        this.boxShadowWidget = new LibBoxShadowWidget(this.z, this.dimensions);
+        this.boxShadowWidget = new LibBoxShadowWidget(this.dimensions, this.z);
         this.boxShadowWidget.init();
-        this.arrowIcon = new LibWidgetArrowIcon(this.dimensions.relative()
-                .withSizeToBottom(this.dimensions.getHeight() - 2)
-                .withSizeToRight(this.dimensions.getWight() - 2),
-                this.z + 1, 0, 0, 0, 1, direction);
+        this.arrowIconDimensions = this.dimensions.relative()
+                .withSizeToBottom(this.dimensions.getHeight() / 2)
+                .withSizeToRight(this.dimensions.getWight() / 1.5F)
+                .centered(this.dimensions);
+
+        this.arrowIcon = new LibWidgetArrowIcon(arrowIconDimensions, this.z + 1, 0, 0, 0, 0.5F, direction);
         this.arrowIcon.init();
+        this.arrowIconDimensions = this.arrowIcon.getDimensionsBox();
     }
 
     @Override
     public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+        if (pressing.get()) {
+            this.outer.setDimensionsBox(this.outerDimensions.move(0, 1));
+            this.arrowIcon.setDimensionsBox(this.arrowIconDimensions.move(0, 1));
+        } else {
+            this.boxShadowWidget.render(matrixStack, mouseX, mouseY, partialTicks);
+            this.outer.setDimensionsBox(this.outerDimensions);
+            this.arrowIcon.setDimensionsBox(this.arrowIconDimensions);
+        }
         this.outer.render(matrixStack, mouseX, mouseY, partialTicks);
-        this.boxShadowWidget.render(matrixStack, mouseX, mouseY, partialTicks);
         this.arrowIcon.render(matrixStack, mouseX, mouseY, partialTicks);
     }
 
@@ -103,11 +129,6 @@ public class LibWidgetButton implements ILibWidget {
 
     public void setOnClickAction(Runnable onClickAction) {
         this.onClickAction = onClickAction;
-    }
-
-    @Override
-    public Priority getPriority() {
-        return Priority.max;
     }
 
     public boolean getPressing() {

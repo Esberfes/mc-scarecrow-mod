@@ -1,8 +1,10 @@
-package mc.scarecrow.lib.screen.gui.widget;
+package mc.scarecrow.lib.screen.gui.widget.implementation;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import mc.scarecrow.lib.math.LibVector2D;
 import mc.scarecrow.lib.math.LibVectorBox;
+import mc.scarecrow.lib.screen.gui.widget.base.ILibWidget;
+import mc.scarecrow.lib.screen.gui.widget.base.icon.IconDirection;
 
 import static mc.scarecrow.lib.utils.UIUtils.drawBox;
 
@@ -13,15 +15,10 @@ public class LibWidgetArrowIcon implements ILibWidget {
     private final float green;
     private final float blue;
     private final float alpha;
-    private final Direction direction;
+    private final IconDirection direction;
     private LibVectorBox dimensions;
-    private LibVectorBox arrow;
 
-    public enum Direction {
-        LEFT, RIGHT;
-    }
-
-    public LibWidgetArrowIcon(LibVectorBox dimensions, int z, float red, float green, float blue, float alpha, Direction direction) {
+    public LibWidgetArrowIcon(LibVectorBox dimensions, int z, float red, float green, float blue, float alpha, IconDirection direction) {
         this.z = z;
         this.red = red;
         this.green = green;
@@ -29,12 +26,11 @@ public class LibWidgetArrowIcon implements ILibWidget {
         this.alpha = alpha;
         this.direction = direction;
         this.dimensions = dimensions;
-        this.arrow = this.dimensions.relative();
     }
 
     @Override
     public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        drawBox(arrow, this.z + 1, red, green, blue, alpha);
+        drawBox(dimensions, this.z + 1, red, green, blue, alpha);
     }
 
     @Override
@@ -44,19 +40,17 @@ public class LibWidgetArrowIcon implements ILibWidget {
 
     @Override
     public void setDimensionsBox(LibVectorBox vectorBox) {
-        this.dimensions = dimensions;
+        this.dimensions = vectorBox;
     }
 
     @Override
     public void init() {
-        arrow = dimensions.relative()
+        dimensions = dimensions.relative()
                 .moveLeftTop(0, this.dimensions.getHeight() / 2F)
                 .moveLeftBottom(0, this.dimensions.getHeight() / -2F);
 
-        if (direction == Direction.RIGHT)
-            arrow = arrow.flipY();
-
-        arrow = arrow.centered(this.dimensions);
+        if (direction == IconDirection.RIGHT)
+            dimensions = dimensions.flipY();
     }
 
     @Override

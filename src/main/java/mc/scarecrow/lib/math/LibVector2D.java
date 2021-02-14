@@ -2,48 +2,27 @@ package mc.scarecrow.lib.math;
 
 import java.util.Objects;
 
-public class LibVector2D implements Comparable<LibVector2D> {
+public class LibVector2D implements Comparable<LibVector2D>, Cloneable {
 
-    private final int x;
-    private final int y;
-    private final float xd;
-    private final float yd;
+    private final float x;
+    private final float y;
 
     public LibVector2D() {
         this.x = 0;
         this.y = 0;
-        this.xd = 0;
-        this.yd = 0;
     }
 
-    public LibVector2D(int x, int y) {
-        this.x = x;
-        this.y = y;
-        this.xd = x;
-        this.yd = y;
-    }
-
-    public LibVector2D(float x, float y) {
-        this.x = (int) x;
-        this.y = (int) y;
-        this.xd = x;
-        this.yd = y;
-    }
-
-    public LibVector2D(double x, double y) {
-        this.x = (int) x;
-        this.y = (int) y;
-        this.xd = (float) x;
-        this.yd = (float) y;
+    public LibVector2D(float xd, float yd) {
+        this.x = xd;
+        this.y = yd;
     }
 
     public LibVector2D(LibVector2D libVector2D) {
         this.x = libVector2D.x;
         this.y = libVector2D.y;
-        this.xd = libVector2D.x;
-        this.yd = libVector2D.y;
     }
 
+    @Override
     public LibVector2D clone() {
         return new LibVector2D(x, y);
     }
@@ -52,28 +31,20 @@ public class LibVector2D implements Comparable<LibVector2D> {
         return new LibVector2D(this.x + x, this.y);
     }
 
-    public LibVector2D addY(float y) {
-        return new LibVector2D(this.x, this.y + y);
+    public LibVector2D addY(float yd) {
+        return new LibVector2D(this.x, this.y + yd);
     }
 
-    public LibVector2D add(float x, float y) {
-        return new LibVector2D(this.x + x, this.y + y);
+    public LibVector2D add(float xd, float yd) {
+        return new LibVector2D(this.x + xd, this.y + yd);
     }
 
-    public int getX() {
+    public float getX() {
         return x;
     }
 
-    public int getY() {
+    public float getY() {
         return y;
-    }
-
-    public float getXd() {
-        return xd;
-    }
-
-    public float getYd() {
-        return yd;
     }
 
     public float distance(LibVector2D other) {
@@ -85,10 +56,8 @@ public class LibVector2D implements Comparable<LibVector2D> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         LibVector2D that = (LibVector2D) o;
-        return x == that.x &&
-                y == that.y &&
-                Float.compare(that.xd, xd) == 0 &&
-                Float.compare(that.yd, yd) == 0;
+        return Float.compare(that.x, x) == 0 &&
+                Float.compare(that.y, y) == 0;
     }
 
     @Override
@@ -109,12 +78,11 @@ public class LibVector2D implements Comparable<LibVector2D> {
 
     @Override
     public String toString() {
-        String sb = "LibVector2D{" + "x=" + x +
-                ", y=" + y +
-                ", xd=" + xd +
-                ", yd=" + yd +
-                '}';
-        return sb;
+        final StringBuffer sb = new StringBuffer("LibVector2D{");
+        sb.append("x=").append(x);
+        sb.append(", y=").append(y);
+        sb.append('}');
+        return sb.toString();
     }
 
     public static LibVector2D relativeTo(LibVector2D other, int xDistance, int yDistance) {

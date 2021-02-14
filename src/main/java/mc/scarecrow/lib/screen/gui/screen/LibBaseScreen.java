@@ -1,13 +1,13 @@
-package mc.scarecrow.lib.screen.gui;
+package mc.scarecrow.lib.screen.gui.screen;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import mc.scarecrow.lib.core.libinitializer.ILibInstanceHandler;
 import mc.scarecrow.lib.core.libinitializer.LibInject;
 import mc.scarecrow.lib.math.LibVector2D;
 import mc.scarecrow.lib.math.LibVectorBox;
-import mc.scarecrow.lib.screen.gui.widget.FocusToken;
-import mc.scarecrow.lib.screen.gui.widget.ILibWidget;
-import mc.scarecrow.lib.screen.gui.widget.LibWidgetEventPropagator;
+import mc.scarecrow.lib.screen.gui.widget.base.ILibWidget;
+import mc.scarecrow.lib.screen.gui.widget.event.LibWidgetEventPropagator;
+import mc.scarecrow.lib.screen.gui.widget.focus.FocusToken;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.util.text.StringTextComponent;
@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-public class LibBaseGui extends Screen {
+public class LibBaseScreen extends Screen {
     {
         ILibInstanceHandler.fire(this);
     }
@@ -31,7 +31,7 @@ public class LibBaseGui extends Screen {
     @LibInject
     private Logger logger;
 
-    protected LibBaseGui() {
+    protected LibBaseScreen() {
         super(new StringTextComponent(""));
         this.dimensions = new LibVectorBox(0, 0, 0, 0);
         this.widgets = new ArrayList<>();
@@ -64,7 +64,7 @@ public class LibBaseGui extends Screen {
     }
 
     @Override
-    public final void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         for (ILibWidget widget : widgets)
             if (widget.isVisible())
                 widget.render(matrixStack, mouseX, mouseY, partialTicks);
@@ -77,14 +77,14 @@ public class LibBaseGui extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        this.widgetEventPropagator.onMouseScrolled(new LibVector2D(mouseX, mouseY), delta);
+        this.widgetEventPropagator.onMouseScrolled(new LibVector2D((float) mouseX, (float) mouseY), delta);
         return true;
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        this.widgetEventPropagator.onClick(new LibVector2D(mouseX, mouseY), button);
-        this.focusPosition = new LibVector2D(mouseX, mouseY);
+        this.widgetEventPropagator.onClick(new LibVector2D((float) mouseX, (float) mouseY), button);
+        this.focusPosition = new LibVector2D((float) mouseX, (float) mouseY);
         this.widgetEventPropagator.onTokenReceived(this.focusToken);
 
         return true;
@@ -92,12 +92,12 @@ public class LibBaseGui extends Screen {
 
     @Override
     public void mouseMoved(double xPos, double mouseY) {
-        this.widgetEventPropagator.onHover(new LibVector2D(xPos, mouseY));
+        this.widgetEventPropagator.onHover(new LibVector2D((float) xPos, (float) mouseY));
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        this.widgetEventPropagator.onClickRelease(new LibVector2D(mouseX, mouseY), button);
+        this.widgetEventPropagator.onClickRelease(new LibVector2D((float) mouseX, (float) mouseY), button);
         return true;
     }
 
@@ -110,6 +110,12 @@ public class LibBaseGui extends Screen {
     @Override
     public boolean charTyped(char codePoint, int modifiers) {
         this.widgetEventPropagator.charTyped(codePoint, modifiers);
+        return true;
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        this.widgetEventPropagator.keyPressed(keyCode, scanCode, modifiers);
         return true;
     }
 
