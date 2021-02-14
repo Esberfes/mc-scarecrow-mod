@@ -16,7 +16,7 @@ apply plugin: 'maven-publish'
 apply plugin: 'com.github.johnrengelman.shadow'
 apply plugin: 'java'
 
-version = '1.0.0-SNAPSHOT'
+version = "${minecraftVersion}-1.0.0-BETA"
 group = 'mc.scarecrow.mod' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'scarecrow'
 
@@ -145,12 +145,12 @@ shadowJar {
 jar {
     manifest {
         attributes([
-                "Specification-Title"     : "examplemod",
-                "Specification-Vendor"    : "examplemodsareus",
-                "Specification-Version"   : "1", // We are version 1 of ourselves
+                "Specification-Title"     : "scarecrow",
+                "Specification-Vendor"    : "scarecrow",
+                "Specification-Version"   : "1",
                 "Implementation-Title"    : project.name,
                 "Implementation-Version"  : "${version}",
-                "Implementation-Vendor"   : "examplemodsareus",
+                "Implementation-Vendor"   : "scarecrow",
                 "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
         ])
     }
@@ -164,6 +164,9 @@ jar.dependsOn shadowJar
 jar.enabled = false
 
 processResources {
+    inputs.property 'version', project.version
+    inputs.property 'mcversion', '1.16.3'
+
     // replace stuff in mcmod.info, nothing else
     from(sourceSets.main.resources.srcDirs) {
         include 'mcmod.info'

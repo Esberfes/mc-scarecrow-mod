@@ -64,9 +64,11 @@ public abstract class TaskUtils {
 
     public static <T extends TileEntity> void executeIfTile(World world, BlockPos pos, Class<T> type, Consumer<T> consumer) {
         try {
-            T tile = getTileEntity(world, pos, type);
-            if (tile != null)
-                consumer.accept(tile);
+            if (world != null && pos != null && type != null) {
+                T tile = getTileEntity(world, pos, type);
+                if (tile != null)
+                    consumer.accept(tile);
+            }
         } catch (Throwable e) {
             LogUtils.printError(LOGGER, e);
         }
